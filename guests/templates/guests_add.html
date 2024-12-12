@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+<!-- Page title  -->
+{% block title %}Add Guest{% endblock title %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .container-fluid {
+        padding-top: 20px;
+    }
+    .card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        margin: 20px auto;
+    }
+    .card-body {
+        padding: 30px;
+    }
+    .form-control {
+        border-radius: 5px;
+    }
+    .btn-dark {
+        background-color: #343a40;
+        border-color: #343a40;
+        border-radius: 5px;
+    }
+    .btn-dark:hover {
+        background-color: #23272b;
+        border-color: #23272b;
+    }
+    .form-group label {
+        font-weight: bold;
+    }
+    .form-row {
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock stylesheets %}
+
+<!-- Page content  -->
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="card col-md-8">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Add Guest</h2>
+                <form action="{% url 'guests:guests_add' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="inputDescription">First Name</label>
+                            <input type="text" class="form-control" name="first_name" placeholder="John..." required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="inputDescription">Last Name</label>
+                            <input type="text" class="form-control" name="last_name" placeholder="Doe..." required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="inputDescription">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="johndoe@gmail.com" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="inputDescription">Phone number</label>
+                            <input type="text" name="phone" class="form-control" placeholder="(412) 727-2736" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <label for="inputDescription">Address</label>
+                            <textarea name="address" class="form-control" placeholder="5340 Brett Dr #A Fort Knox, Kentucky(KY), 40121 ..." rows="2" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-dark font-weight-bold">Add Guest</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

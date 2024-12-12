@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+<!-- Page title  -->
+{% block title %}Register User{% endblock title %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .container-fluid {
+        padding-top: 50px;
+    }
+    .card {
+        margin: 0 auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-body {
+        padding: 30px;
+    }
+    .btn-dark {
+        background-color: #343a40;
+        border-color: #343a40;
+    }
+    .btn-dark:hover {
+        background-color: #23272b;
+        border-color: #23272b;
+    }
+    .font-weight-bold {
+        font-weight: 700;
+    }
+    .spinner {
+        display: none;
+        margin-left: 10px;
+        vertical-align: middle;
+        width: 1rem;
+        height: 1rem;
+        border: 0.2em solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spinner-border 0.75s linear infinite;
+    }
+    @keyframes spinner-border {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock stylesheets %}
+
+<!-- Page content  -->
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="card col-md-8 col-lg-6">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Register</h2>
+                <form action="{% url 'authentication:register' %}" method="post" id="registerForm">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-dark font-weight-bold" id="submitButton">
+                            Create User
+                            <span class="spinner" id="loadingSpinner"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function () {
+        var submitButton = document.getElementById('submitButton');
+        var spinner = document.getElementById('loadingSpinner');
+
+        // Disable the button and show the spinner
+        submitButton.disabled = true;
+        spinner.style.display = 'inline-block';
+    });
+</script>
+{% endblock javascripts %}

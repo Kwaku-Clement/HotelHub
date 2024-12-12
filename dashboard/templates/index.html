@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+  body {
+    background-color: #f8f9fa;
+    font-family: 'Arial', sans-serif;
+  }
+  .container-fluid {
+    padding: 20px;
+  }
+  .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+  }
+  .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e3e6f0;
+  }
+  .chart-area, .chart-pie {
+    height: 350px;
+    width: 100%;
+  }
+  .animate__animated {
+    animation-duration: 1s;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block heading %}Dashboard{% endblock heading %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Stats Cards Row -->
+  <div class="row animate__animated animate__fadeIn">
+    <!-- Average Earning Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Average Earning (Current Week)
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ avg_earning }} Ȼ
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Earnings Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Total Earnings (Current Week)
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_earnings }} Ȼ
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rooms Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Registered Rooms</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ rooms }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-fw fa-tag fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Types Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Room Types</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ room_types }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-fw fa-tag fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row animate__animated animate__fadeInUp">
+    <!-- Area Chart -->
+    <div class="col-xl-8 col-lg-7">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Earnings Overview (Current Week)
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-area">
+            <canvas id="myAreaChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Most Booked Rooms (Days)</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-pie">
+            <canvas id="myPieChart"></canvas>
+          </div>
+          <div class="mt-4 text-center small">
+            {% for room_name in top_rooms_names_list %}
+            <div class="mr-2 mt-2">
+              <i class="fas fa-circle {% cycle 'text-primary' 'text-success' 'text-info' 'text-warning' 'text-danger' %} mr-2"></i>
+              {{ room_name }}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<!-- Chart JS -->
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Parse the JSON data from Django
+    const earningsData = JSON.parse('{{ earnings_data|safe }}');
+    const topRoomsData = JSON.parse('{{ top_rooms_data|safe }}');
+
+    // Area Chart
+    const ctx = document.getElementById("myAreaChart").getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: earningsData.map(item => item.date),
+            datasets: [{
+                label: "Earnings (Ȼ)",
+                lineTension: 0.3,
+                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                borderColor: "rgba(78, 115, 223, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointBorderColor: "rgba(78, 115, 223, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: earningsData.map(item => item.earning)
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        maxTicksLimit: 5,
+                        padding: 10,
+                        callback: function(value) {
+                            return 'Ȼ' + value;
+                        }
+                    }
+                }]
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
+
+    // Pie Chart
+    const pieCtx = document.getElementById("myPieChart").getContext('2d');
+    new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: topRoomsData.map(item => `${item.name} (${item.days} days)`),
+            datasets: [{
+                data: topRoomsData.map(item => item.days),
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            legend: {
+                display: false
+            },
+            tooltips: {
+                enabled: true,
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        return data.labels[tooltipItem.index];
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock javascripts %}

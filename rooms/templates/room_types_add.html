@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+<!-- Page title  -->
+{% block title %}Add room type{% endblock title %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+<!-- Page content  -->
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+    <div class="card col-md-8">
+        <div class="card-body">
+            <form action="{% url 'rooms:room_types_add' %}"  method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="inputDescription">Room Type</label>
+                        <input type="text" class="form-control" name="name" placeholder="Deluxe..." required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="state">State</label>
+                        <select name="state" class="form-control" required>
+                            {% for status in room_type_status %}
+                            <option value="{{status.0}}">{{status.1}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label for="inputDescription">Additional Notes</label>
+                        <input type="text" name="description" class="form-control" placeholder="Deluxe bedroom with breakfast.." required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success font-weight-bold">Create room type</button>
+
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

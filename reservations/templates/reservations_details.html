@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+<!-- Page title -->
+{% block title %}Reservation Details{% endblock title %}
+
+<!-- Specific Page CSS -->
+{% block stylesheets %}
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<!-- Bootstrap Touchspin -->
+<link rel="stylesheet" href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}">
+<!-- Custom CSS -->
+<style>
+    .container-fluid {
+        padding: 20px;
+    }
+    .card {
+        border: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-control {
+        border-radius: 5px;
+    }
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+    .btn-info:hover {
+        background-color: #138496;
+        border-color: #117a8b;
+    }
+    .font-weight-bold {
+        font-weight: bold;
+    }
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock stylesheets %}
+
+<!-- Page Heading -->
+{% block heading %}Reservation ID: {{ reservation.id }}, Details{% endblock heading %}
+
+<!-- Page content -->
+{% block content %}
+<div class="container-fluid">
+    <!-- Go back button -->
+    <div class="mb-3">
+        <a href="{% url 'reservations:reservations_list' %}">
+            <button type="button" class="btn btn-info font-weight-bold">
+                <i class="fas fa-long-arrow-alt-left mr-2"></i>
+                Go back
+            </button>
+        </a>
+    </div>
+
+    <!-- Reservation details form -->
+    <form action="{% url 'reservations:reservations_edit' reservation.id %}" class="reservationForm" method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header">Reservation Details</div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Reservation Details -->
+                    {% for detail in details %}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="reservation_date">Reservation Date</label>
+                            <input type="text" class="form-control" id="reservation_date" value="{{ reservation.reservation_date }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="room_name">Room Name</label>
+                            <input type="text" class="form-control" id="room_name" value="{{ detail.room.name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Price</label>
+                            <input type="text" class="form-control" id="price" value="{{ detail.price }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="tax_amount">Tax Amount</label>
+                            <input type="text" class="form-control" id="tax_amount" value="{{ detail.check_in }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="check_in">Check In</label>
+                            <input type="text" class="form-control" id="check_in" value="{{ detail.check_out }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="check_out">Check Out</label>
+                            <input type="text" class="form-control" id="check_out" value="{{ detail.check_out }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="days">Number of Days</label>
+                            <input type="text" class="form-control" id="days" value="{{ detail.days }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="guest">Guest</label>
+                            <input type="text" class="form-control" id="guest" value="{{ reservation.guest.get_full_name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="sub_total">Subtotal</label>
+                            <input type="text" class="form-control" id="sub_total" value="{{ reservation.sub_total }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="tax_percentage">Tax Inclusive (%)</label>
+                            <input type="text" class="form-control" id="tax_percentage" value="{{ reservation.tax_percentage }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="tax_amount_total">Tax Amount</label>
+                            <input type="text" class="form-control" id="tax_amount_total" value="{{ reservation.tax_amount }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="grand_total">Grand Total</label>
+                            <input type="text" class="form-control" id="grand_total" value="{{ reservation.grand_total }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="amount_payed">Amount Paid</label>
+                            <input type="text" class="form-control" id="amount_payed" value="{{ reservation.amount_payed }}" readonly>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock content %}

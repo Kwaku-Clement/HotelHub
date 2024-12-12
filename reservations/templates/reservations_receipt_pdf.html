@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reservation Receipt PDF</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        body {
+            font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container-fluid {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .header .logo img {
+            width: 75px;
+            height: 75px;
+            margin-right: 10px;
+        }
+
+        .header .company-info {
+            text-align: left;
+        }
+
+        .header .company-info p {
+            margin: 5px 0;
+        }
+
+        .header .reservation-info {
+            text-align: right;
+        }
+
+        .header .reservation-info p {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table thead tr {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        table thead tr th {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table tbody tr td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tbody tr td.text-right {
+            text-align: right;
+        }
+
+        table tbody tr td.text-center {
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #007bff;
+        }
+
+        .footer p {
+            font-size: 1.2em;
+        }
+
+        .company-info .name-company {
+            font-size: 1.5em;
+            color: #007bff;
+        }
+
+        .reservation-info p {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="header">
+        <div class="logo">
+            <img src="{% static 'path/to/logo.png' %}" alt="Company Logo">
+        </div>
+        <div class="company-info">
+            <p class="name-company"><b>E-Corp</b></p>
+            <p><b>135 East 57th Street</b></p>
+            <p><b>New York, NY 10011, USA</b></p>
+            <p><b>Phone:</b> (213) 484-6829</p>
+        </div>
+        <div class="reservation-info">
+            <p><b>Date:</b> {{reservation.reservation_date}}</p>
+            <p><b>Reservation ID:</b> {{reservation.id}}</p>
+            <p><b>Guest:</b> {{reservation.guest.get_full_name}}</p>
+        </div>
+    </div>
+
+    <!-- Table of products -->
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 40%;">Room</th>
+            <th style="width: 10%;">Days</th>
+            <th style="width: 20%;">Price</th>
+            <th style="width: 20%;">Total</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for d in details %}
+            <tr>
+                <td class="text-center">{{forloop.counter}}</td>
+                <td>{{d.room.name}}</td>
+                <td class="text-center">{{d.days}}</td>
+                <td class="text-right">{{d.price}} Ȼ</td>
+                <td class="text-right">{{d.total_detail}} Ȼ</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-right"><b>Subtotal</b></td>
+            <td class="text-right">{{reservation.sub_total|floatformat:2}} Ȼ</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right"><b>Tax Inclusive ({{reservation.tax_percentage}}%)</b></td>
+            <td class="text-right">{{reservation.tax_amount|floatformat:2}} Ȼ</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right"><b>Grand Total</b></td>
+            <td class="text-right">{{reservation.grand_total}} Ȼ</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right"><b>Amount Paid</b></td>
+            <td class="text-right">{{reservation.amount_payed}} Ȼ</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-right"><b>Change</b></td>
+            <td class="text-right">{{reservation.amount_change}} Ȼ</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Thank you for your preference!</p>
+    </div>
+</div>
+</body>
+</html>

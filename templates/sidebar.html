@@ -1,0 +1,100 @@
+{% load static %}
+
+<ul class="navbar-nav bg-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'dashboard:index' %}">
+        <div class="sidebar-brand-icon rotate-n-15">
+            <i class="fas fa-hotel"></i>
+        </div>
+        <div class="sidebar-brand-text mx-3">HOTELHUB</div>
+    </a>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider mb-0">
+
+    <!-- Nav Item - Dashboard -->
+    <li class="{% if "index" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'dashboard:index' %}">
+            <i class="fas fa-fw fa-home"></i>
+            <span>Home</span></a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider mb-0">
+
+    <!-- Nav Item - Dashboard -->
+    {% if request.user.is_superuser or request.session.user_role == 'admin' or request.session.user_role == 'manager' %}
+    <li class="{% if "dashboard" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'dashboard:dashboard' %}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span></a>
+    </li>
+    {% endif %}
+
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Nav Item - Room Types -->
+    <li class="{% if "room_types" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'rooms:room_types_list' %}">
+            <i class="fas fa-fw fa-bed"></i>
+            <span>Room Type</span></a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Nav Item - Create Room -->
+    <li class="{% if "rooms" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'rooms:rooms_list' %}">
+            <i class="fas fa-fw fa-bed"></i>
+            <span>Rooms</span></a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Nav Item - Guest -->
+    <li class="{% if "guest" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'guests:guests_list' %}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Guest</span></a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider my-0">
+
+    <!-- Nav Item - Reservations -->
+    <li class="{% if "reservations" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'reservations:reservations_list' %}">
+            <i class="fas fa-fw fa-cart-plus"></i>
+            <span>Reservations</span></a>
+    </li>
+
+    <hr class="sidebar-divider d-none d-md-block">
+
+    <li class="{% if "report" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'reservations:reservations_report' %}">
+            <i class="fas fa-chart-line mr-2"></i>
+            <span>Generate Reports</span></a>
+    </li>
+
+    <hr class="sidebar-divider d-none d-md-block">
+
+    <!-- Nav Item - Manage Accounts -->
+    {% if request.user.is_superuser or request.session.user_role == 'admin' or request.session.user_role == 'manager' %}
+    <li class="{% if "users" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'authentication:users_list' %}">
+            <i class="fas fa-chart-line mr-2"></i>
+            <span>Manage Accounts</span></a>
+    </li>
+    <hr class="sidebar-divider d-none d-md-block">
+    {% endif %}
+
+    <!-- Sidebar Toggler (Sidebar) -->
+    <div class="text-center d-none d-md-inline">
+        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+    </div>
+
+</ul>

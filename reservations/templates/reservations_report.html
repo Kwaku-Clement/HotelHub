@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reservations Report{% endblock title %}
+
+{% block stylesheets %}
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .container-fluid {
+        padding: 20px;
+    }
+    .card {
+        border: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    /* .card-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+    } */
+    .card-header .row {
+        align-items: center;
+    }
+    #reservationSearch {
+        max-width: 250px;
+        border-radius: 15px;
+        padding: 5px 15px;
+        margin: 10px 0;
+    }
+    .form-inline {
+        display: flex;
+        align-items: center;
+    }
+    .form-inline label {
+        margin-right: 10px;
+    }
+    .form-inline input {
+        margin-right: 10px;
+    }
+    .form-inline button {
+        margin-left: 10px;
+    }
+    .table-responsive {
+        margin-top: 20px;
+    }
+    .table th {
+        background-color: #007bff;
+        color: white;
+    }
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    .no-reservations {
+        text-align: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% comment %} Page content {% endcomment %}
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Reservations Report</h4>
+            <div class="row mb-3">
+                <form method="get" class="form-inline">
+                    <label for="start_date" class="mr-2">Start Date:</label>
+                    <input type="date" name="start_date" value="{{ start_date }}" class="form-control mr-2" id="start_date">
+                    <label for="end_date" class="mr-2">End Date:</label>
+                    <input type="date" name="end_date" value="{{ end_date }}" class="form-control mr-2" id="end_date">
+                    <button type="submit" class="btn btn-primary">Generate</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Reservations -->
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Receptionist</th>
+                            <th>Guest Name</th>
+                            <th>Check-In</th>
+                            <th>Check-Out</th>
+                            <th>Room Name(s)</th>
+                            <th>Grand Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reservations %}
+                        <tr>
+                            <td>{{ r.id }}</td>
+                            <td>{{ r.reservation_date|date:"d-m-Y" }}</td>
+                            <td>{{ r.created_by.username }}</td>
+                            <td>{{ r.guest.get_full_name }}</td>
+                            <td>{{ r.check_in|date:"d-m-Y" }}</td>
+                            <td>{{ r.check_out|date:"d-m-Y" }}</td>
+                            <td>
+                                {% for detail in r.reservationdetail_set.all %}
+                                {{ detail.room.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ r.grand_total }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="no-reservations">No reservations found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<!-- Datatables -->
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Datatable buttons -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"></script>
+<!-- Moment JS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    tblReservation = $('#dataTable').DataTable({
+        dom: 'Brt',
+        buttons: [
+            {
+                extend: 'print',
+                text: 'Print <i class="fas fa-file ml-2"></i>',
+                titleAttr: 'Print',
+                className: 'btn btn-info',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6]
+                }
+            },
+            {
+                extend: 'excelHtml5',
+                text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                titleAttr: 'Excel',
+                className: 'btn btn-success ml-2',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6]
+                }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                titleAttr: 'PDF',
+                className: 'btn btn-danger ml-2',
+                download: 'open',
+                orientation: 'vertical',
+                pageSize: 'A4',
+                title: '*',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6]
+                },
+                customize: function(doc) {
+                    doc.styles = {
+                        header: {
+                            fontSize: 18,
+                            bold: true,
+                            alignment: 'center'
+                        },
+                        subheader: {
+                            fontSize: 11,
+                            bold: true
+                        },
+                        quote: {
+                            italics: true
+                        },
+                        small: {
+                            fontSize: 8
+                        },
+                        tableHeader: {
+                            bold: true,
+                            fontSize: 11,
+                            color: 'white',
+                            fillColor: '#2d4154',
+                            alignment: 'center'
+                        }
+                    };
+                    doc.content[1].table.widths = ['10%', '10%', '30%', '30%', '20%'];
+                    doc.content[1].margin = [0, 35, 0, 0];
+                    doc.content[1].layout = {};
+                    doc['footer'] = (function(page, pages) {
+                        return {
+                            columns: [
+                                {
+                                    alignment: 'left',
+                                    text: ['Creation date: ', { text: moment().format('MM-DD-YYYY (HH:mm:ss)') }]
+                                },
+                                {
+                                    alignment: 'right',
+                                    text: ['page ', { text: page.toString() }, ' de ', { text: pages.toString() }]
+                                }
+                            ],
+                            margin: 20
+                        }
+                    });
+                }
+            }
+        ],
+        columnDefs: [
+            { targets: [0], visible: false, searchable: false },
+            { targets: [-1], orderable: false }
+        ]
+    });
+});
+</script>
+{% endblock javascripts %}

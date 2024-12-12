@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+<!-- Page title  -->
+{% block title %}Update room{% endblock title %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+<!-- Page content  -->
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+    <div class="card col-md-8">
+        <div class="card-body">
+            <form action="{% url 'rooms:rooms_update' room.id %}"  method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="inputDescription">Name</label>
+                        <input type="text" class="form-control" name="name" value="{{room.name}}" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="state">State</label>
+                        <select name="state" class="form-control" required>
+                            {% for status in room_status %}
+                                {% if status.0 == room.status   %}
+                                <option value="{{status.0}}" selected>{{status.1}}</option>
+                                {% else %}
+                                <option value="{{status.0}}">{{status.1}}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="inputDescription">Description</label>
+                        <input type="text" name="description" class="form-control" value="{{room.description}}" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="room_type">Room type</label>
+                        <select name="room_type" class="form-control" required>
+                            <option value="" selected disabled hidden>Select the room type</option>
+                            {% for room_type in room_types %}
+                                {% if room.room_type.id == room_type.id%}
+                                <option value="{{room_type.id}}" selected>{{room_type.name}}</option>
+                                {% else %}
+                                <option value="{{room_type.id}}">{{room_type.name}}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="inputPrice">Price</label>
+                        <input type="number" name="price" step="any"  class="form-control" value="{{room.price}}"  required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-dark font-weight-bold">Update Room</button>
+
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

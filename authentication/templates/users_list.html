@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+
+<!-- Page title  -->
+{% block title %}Users{% endblock title %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
+<style>
+    .card-header .row {
+        align-items: center;
+    }
+    #usersSearch {
+        max-width: 250px;
+        border-radius: 15px;
+        padding: 5px 15px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock stylesheets %}
+
+<!-- Page content  -->
+{% block content %}
+<div class="container-fluid">
+    <!--Create new users-->
+    <div class="row ml-0 mb-3">
+        <a href="{% url 'authentication:register' %}">
+            <button type="button" class="btn btn-dark font-weight-bold">
+                <i class="fas fa-plus mr-2"></i>
+                Register New User
+            </button>
+        </a>
+    </div>
+
+    <!-- DataTable -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Users</h6>
+            <input type="text" class="form-control" id="usersSearch" placeholder="Search Users">
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th style="width:20%">Name</th>
+                            <th style="width:15%">Username</th>
+                            <th style="width:15%">Role</th>
+                            <th style="width:15%">Phone</th>
+                            <th style="width:25%">Address</th>
+                            <th class="text-center" style="width:10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.id }}</td>
+                            <td>{{ u.get_full_name }}</td>
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.role }}</td>
+                            <td>{{ u.phone }}</td>
+                            <td>{{ u.address }}</td>
+                            <td class="text-center">
+                                <!--Update-->
+                                <a href="{% url 'authentication:update_user' u.id %}" class="text-decoration-none">
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="tooltip" title="Change Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                </a>
+                                <!--Delete modal-->
+                                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal{{ u.user.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="deleteModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Delete User</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete the user: {{ u.get_full_name }}?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                <a href="{% url 'authentication:delete_user' u.id %}" class="btn btn-danger">Delete</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<!-- Datatables -->
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<!--Datatable buttons-->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"></script>
+<!--Moment JS-->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#dataTable').DataTable({
+        dom: 'Brtip',
+        buttons: [
+            {
+                extend: 'print',
+                text: 'Print <i class="fas fa-print ml-2"></i>',
+                className: 'btn btn-info',
+                exportOptions: {
+                    columns: [1, 2, 3, 4, 5]
+                }
+            },
+            {
+                extend: 'excel',
+                text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                className: 'btn btn-success ml-2',
+                exportOptions: {
+                    columns: [1, 2, 3, 4, 5]
+                }
+            },
+            {
+                extend: 'pdf',
+                text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                className: 'btn btn-danger ml-2',
+                exportOptions: {
+                    columns: [1, 2, 3, 4, 5]
+                },
+                customize: function(doc) {
+                    doc.content[1].table.widths = ['20%', '15%', '15%', '15%', '35%'];
+                    doc.styles.tableHeader = {
+                        fillColor: '#2d4154',
+                        color: 'white',
+                        alignment: 'center'
+                    };
+                    doc.content[1].margin = [0, 35, 0, 0];
+                    doc.footer = function(page, pages) {
+                        return {
+                            columns: [
+                                {
+                                    alignment: 'left',
+                                    text: ['Created: ', { text: moment().format('MM-DD-YYYY HH:mm:ss') }]
+                                },
+                                {
+                                    alignment: 'right',
+                                    text: ['Page ', { text: page.toString() }, ' of ', { text: pages.toString() }]
+                                }
+                            ],
+                            margin: 20
+                        };
+                    };
+                }
+            }
+        ]
+    });
+
+    $('#usersSearch').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+});
+</script>
+{% endblock javascripts %}

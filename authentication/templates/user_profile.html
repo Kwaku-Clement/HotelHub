@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+<!-- Page title -->
+{% block title %}User Profile{% endblock title %}
+
+<!-- Specific Page CSS -->
+{% block stylesheets %}
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+<!-- Bootstrap Touchspin -->
+<link rel="stylesheet" href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}">
+<!-- Custom CSS -->
+<style>
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .card-header h1 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    .form-group label {
+        font-weight: bold;
+    }
+    .form-control[readonly] {
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+    .btn-info {
+        margin-left: auto;
+    }
+    .reservationForm .card {
+        margin-top: 20px;
+    }
+</style>
+{% endblock stylesheets %}
+
+<!-- Page content -->
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Reservation details form -->
+    <form action="{% url 'authentication:user_profile' %}" class="reservationForm" method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1>User Profile</h1>
+                <div class="form-group mb-0">
+                    <a href="{% url 'authentication:change_password' %}">
+                        <button type="button" class="btn btn-info font-weight-bold">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Reservation Details -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>First Name:</label>
+                            <input name="first_name" class="form-control" value="{{ user.first_name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input name="username" class="form-control" value="{{ user.username }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input name="phone" class="form-control" value="{{ user.phone }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Login</label>
+                            <input name="last_login" class="form-control" value="{{ user.last_login }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input name="last_name" class="form-control" value="{{ user.last_name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <input name="role" class="form-control" value="{{ user.role }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input name="address" class="form-control" value="{{ user.address }}" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock content %}
