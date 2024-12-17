@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Receipt{% endblock title %}
+
+{% block content %}
+<div class="container">
+    <h1>Receipt</h1>
+    <p>Code: {{ sale.code }}</p>
+    <p>Sub Total: {{ sale.sub_total }}</p>
+    <p>Grand Total: {{ sale.grand_total }}</p>
+    <p>Date Added: {{ sale.date_added }}</p>
+    <h2>Items</h2>
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.salesitems_set.all %}
+            <tr>
+                <td>{{ item.product.product_name }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}

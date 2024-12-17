@@ -1,0 +1,73 @@
+{% extends "select_report.html" %}
+{% load static %}
+
+{% block report_content %}
+<h1>Financial Report</h1>
+<p>Total Sales: ${{ report_data.total_sales }}</p>
+<p>Total Purchases: ${{ report_data.total_purchases }}</p>
+<p>Profit/Loss: ${{ report_data.profit_loss }}</p>
+
+<h2>Supplier Expenses</h2>
+<table id="supplierTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Supplier Name</th>
+            <th>Total Purchases</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in report_data.supplier_expenses %}
+            <tr>
+                <td>{{ data.supplier }}</td>
+                <td>${{ data.total_purchases }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Category Sales</h2>
+<table id="categoryTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Category Name</th>
+            <th>Total Sales</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in report_data.category_sales %}
+            <tr>
+                <td>{{ data.category }}</td>
+                <td>${{ data.total_sales }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Product Sales</h2>
+<table id="productTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Total Sales</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in report_data.product_sales %}
+            <tr>
+                <td>{{ data.product }}</td>
+                <td>${{ data.total_sales }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<button onclick="window.print()">Print</button>
+
+<script>
+    $(document).ready(function() {
+        $('#supplierTable').DataTable();
+        $('#categoryTable').DataTable();
+        $('#productTable').DataTable();
+    });
+</script>
+{% endblock report_content %}

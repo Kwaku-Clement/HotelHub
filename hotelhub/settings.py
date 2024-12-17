@@ -38,6 +38,8 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
+
 ]
 
 LOCAL_APPS = [
@@ -46,6 +48,11 @@ LOCAL_APPS = [
     "rooms",
     "reservations",
     "authentication",
+    "inventory",
+    "sales",
+    "reports",
+    "activitylog",
+    "miscellaneous",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -58,6 +65,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'activitylog.activity_logger.ActivityLoggerMiddleware',
+
 ]
 
 ROOT_URLCONF = 'hotelhub.urls'

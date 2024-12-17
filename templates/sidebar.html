@@ -32,6 +32,26 @@
     </li>
     {% endif %}
 
+       <!-- Divider -->
+       <hr class="sidebar-divider my-0">
+
+       <!-- Nav Item - Reservations -->
+       <li class="{% if "home" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+           <a class="nav-link" href="{% url 'inventory:home' %}">
+               <i class="fas fa-fw fa-cart-plus"></i>
+               <span>Sales</span></a>
+       </li>
+
+       <!-- Divider -->
+       <hr class="sidebar-divider my-0">
+
+       <!-- Nav Item - Reservations -->
+       <li class="{% if "reservations" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+           <a class="nav-link" href="{% url 'reservations:reservations_list' %}">
+               <i class="fas fa-fw fa-cart-plus"></i>
+               <span>Reservations</span></a>
+       </li>
+
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
@@ -62,16 +82,6 @@
             <span>Guest</span></a>
     </li>
 
-    <!-- Divider -->
-    <hr class="sidebar-divider my-0">
-
-    <!-- Nav Item - Reservations -->
-    <li class="{% if "reservations" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
-        <a class="nav-link" href="{% url 'reservations:reservations_list' %}">
-            <i class="fas fa-fw fa-cart-plus"></i>
-            <span>Reservations</span></a>
-    </li>
-
     <hr class="sidebar-divider d-none d-md-block">
 
     <li class="{% if "report" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
@@ -82,15 +92,26 @@
 
     <hr class="sidebar-divider d-none d-md-block">
 
-    <!-- Nav Item - Manage Accounts -->
+    <!-- Nav Item - Miscellaneous -->
     {% if request.user.is_superuser or request.session.user_role == 'admin' or request.session.user_role == 'manager' %}
-    <li class="{% if "users" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
-        <a class="nav-link" href="{% url 'authentication:users_list' %}">
-            <i class="fas fa-chart-line mr-2"></i>
-            <span>Manage Accounts</span></a>
+    <li class="{% if "miscellaneous" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+        <a class="nav-link" href="{% url 'miscellaneous:miscellaneous_list' %}">
+            <i class="fas fa-folder mr-2"></i> <!-- Changed to a cog icon -->
+            <span>Miscellaneous</span></a>
     </li>
     <hr class="sidebar-divider d-none d-md-block">
     {% endif %}
+
+
+        <!-- Nav Item - Manage Accounts -->
+        {% if request.user.is_superuser or request.session.user_role == 'admin' or request.session.user_role == 'manager' %}
+        <li class="{% if "users" in active_icon %} nav-item active {% else %} nav-item {% endif %}">
+            <a class="nav-link" href="{% url 'authentication:users_list' %}">
+                <i class="fas fa-chart-line mr-2"></i>
+                <span>Manage Accounts</span></a>
+        </li>
+        <hr class="sidebar-divider d-none d-md-block">
+        {% endif %}
 
     <!-- Sidebar Toggler (Sidebar) -->
     <div class="text-center d-none d-md-inline">

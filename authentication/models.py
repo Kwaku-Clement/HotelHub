@@ -27,7 +27,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('receptionist', 'Receptionist'),
-        ('manager', 'Manager')
+        ('manager', 'Manager'),
+        ('seller', 'Seller')
     ]
 
     first_name = models.CharField(max_length=256, blank=False, null=False)

@@ -122,7 +122,6 @@ def reservations_details_view(request, reservation_id):
     }
     return render(request, "reservations_details.html", context=context)
 
-
 @login_required(login_url="authentication/login/")
 def receipt_pdf_view(request, reservation_id):
     reservation = get_object_or_404(Reservation, id=reservation_id)

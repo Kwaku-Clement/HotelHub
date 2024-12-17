@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block stylesheets %}
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet" />
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" />
+<!-- Bootstrap Touchspin -->
+<link rel="stylesheet" href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}" />
+<style>
+  body {
+    background-color: #f3f4f6;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .container-fluid {
+    padding: 2rem !important;
+  }
+  .dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: 100%;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  .card-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .card-title {
+    color: #2563eb;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .card-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111827;
+  }
+  .card-subtitle {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  .icon-container {
+    padding: 1rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 1rem;
+  }
+  .icon-container.green { background-color: #10b981; }
+  .icon-container.blue { background-color: #3b82f6; }
+  .icon-container.cyan { background-color: #06b6d4; }
+  .icon-container.yellow { background-color: #f59e0b; }
+  .icon-container i {
+    color: white;
+    font-size: 1.5rem;
+  }
+  .view-more {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #f3f4f6;
+    transition: background-color 0.2s, color 0.2s;
+    display: inline-block;
+    margin-top: 1rem;
+  }
+  .view-more:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+    text-decoration: none;
+  }
+  .row {
+    margin: -1rem;
+  }
+  .col-md-6 {
+    padding: 1rem;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2rem;
+  }
+  .card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .card-link:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 1rem !important;
+    }
+    .col-md-6 {
+      padding: 0.5rem;
+    }
+    .dashboard-card {
+      padding: 1rem;
+    }
+    .card-title {
+      font-size: 1rem;
+    }
+    .card-number {
+      font-size: 2rem;
+    }
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1>Dashboard</h1>
+
+  <div class="row">
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'sales:sales_list' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container yellow">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+            <h5 class="card-title">Point Of Sales</h5>
+            <p class="card-number">0</p>
+            <p class="card-subtitle">Total Sales Today</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'inventory:category_list' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container green">
+              <i class="fas fa-list"></i>
+            </div>
+            <h5 class="card-title">Categories</h5>
+            <p class="card-number">10</p>
+            <p class="card-subtitle">Number of Categories</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'inventory:product_list' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container blue">
+              <i class="fas fa-box"></i>
+            </div>
+            <h5 class="card-title">Products</h5>
+            <p class="card-number">33</p>
+            <p class="card-subtitle">Number of Products</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'inventory:supplier_list' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container cyan">
+              <i class="fas fa-truck"></i>
+            </div>
+            <h5 class="card-title">Suppliers</h5>
+            <p class="card-number">0</p>
+            <p class="card-subtitle">Suppliers List</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'inventory:purchase_list' %}" class="card-link">
+          <div class="dashboard-card">
+            <div class="card-content">
+              <div class="icon-container yellow">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <h5 class="card-title">Purchases</h5>
+              <p class="card-number">0</p>
+              <p class="card-subtitle">Purchases List</p>
+            </div>
+          </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'reports:generate_report' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container yellow">
+              <i class="fas fa-book"></i>
+            </div>
+            <h5 class="card-title">Reports</h5>
+            <p class="card-number">0</p>
+            <p class="card-subtitle">Generate Reports</p>
+          </div>
+        </div>
+      </a>
+    </div><div class="col-md-6 col-lg-3">
+      <a href="{% url 'dashboard:analysis_report' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container yellow">
+              <i class="fas fa-book"></i>
+            </div>
+            <h5 class="card-title">Analysis</h5>
+            <p class="card-subtitle">Analysis</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

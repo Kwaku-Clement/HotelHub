@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card">
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <h4 class="card-title mb-0">Checkout</h4>
+        </div>
+        <div class="mdc-card__content">
+            <form action="" id="checkout-form">
+                <div class="mdc-layout-grid__inner">
+                    <!-- Amount to Pay -->
+                    <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+                        <div class="mdc-text-field mdc-text-field--outlined w-100">
+                            <input type="text" id="payable_amount" 
+                                   class="mdc-text-field__input text-end" 
+                                   value="{{ grand_total|intcomma }}" 
+                                   disabled>
+                            <div class="mdc-notched-outline">
+                                <div class="mdc-notched-outline__leading"></div>
+                                <div class="mdc-notched-outline__notch">
+                                    <label class="mdc-floating-label">Amount to Pay</label>
+                                </div>
+                                <div class="mdc-notched-outline__trailing"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amount Received -->
+                    <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12 mt-3">
+                        <div class="mdc-text-field mdc-text-field--outlined w-100">
+                            <input type="number" step="any" id="tendered_amount" 
+                                   class="mdc-text-field__input text-end" 
+                                   value="0" required>
+                            <div class="mdc-notched-outline">
+                                <div class="mdc-notched-outline__leading"></div>
+                                <div class="mdc-notched-outline__notch">
+                                    <label class="mdc-floating-label">Amount Received</label>
+                                </div>
+                                <div class="mdc-notched-outline__trailing"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change -->
+                    <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12 mt-3">
+                        <div class="mdc-text-field mdc-text-field--outlined w-100">
+                            <input type="text" id="payment_change" 
+                                   class="mdc-text-field__input text-end" 
+                                   value="{{ 0|intcomma }}" disabled>
+                            <div class="mdc-notched-outline">
+                                <div class="mdc-notched-outline__leading"></div>
+                                <div class="mdc-notched-outline__notch">
+                                    <label class="mdc-floating-label">Change</label>
+                                </div>
+                                <div class="mdc-notched-outline__trailing"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12 mt-4">
+                        <button class="mdc-button mdc-button--raised w-100" type="submit">
+                            <span class="mdc-button__ripple"></span>
+                            <span class="mdc-button__label">Complete Transaction</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block ScriptBlock %}
+<script>
+    $(function() {
+        // Initialize Material Components
+        mdc.textField.MDCTextField.attachTo(document.querySelector('.mdc-text-field'));
+        
+        $('#tendered_amount').on('input keypress keyup keydown', function() {
+            var tendered_amount = $('#tendered_amount').val();
+            var payable = $('#payable_amount').val();
+            tendered_amount = tendered_amount.replace(/,/gi, '');
+            payable = payable.replace(/,/gi, '');
+            var change = 0;
+            
+            tendered_amount = tendered_amount > 0 ? tendered_amount : 0;
+            $('[name="tendered_amount"]').val(tendered_amount);
+            
+            change = parseFloat(tendered_amount) - parseFloat(payable);
+            $('#payment_change').val(parseFloat(change).toLocaleString('en-US'));
+            $('[name="amount_change"]').val(change);
+        });
+
+        $('#checkout-form').submit(function(e) {
+            e.preventDefault();
+            if ($('[name="amount_change"]').val() < 0) {
+                alert_toast("Amount received is less than Amount to Pay.", "error");
+                return false;
+            }
+            $('#sales-form').submit();
+        });
+    });
+</script>
+{% endblock ScriptBlock %}

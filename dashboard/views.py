@@ -1,11 +1,17 @@
 import json
 from datetime import date, datetime, timedelta
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, FloatField, Q, Avg
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
 from reservations.models import Reservation, ReservationDetail
 from rooms.models import Room, RoomType
+from django.utils import timezone
+from inventory.models import Purchase
+from miscellaneous.models import Miscellaneous
+from sales.models import Sales, SalesItems
+from django.db.models import Sum, F, Q, Avg, Value, DecimalField, IntegerField
+from django.http import JsonResponse
+
 
 @login_required(login_url="authentication/login/")
 def index(request):
@@ -21,7 +27,7 @@ def index(request):
         earning = Reservation.objects.filter(
             reservation_date=current_date
         ).aggregate(
-            total=Coalesce(Sum('grand_total'), 0.0, output_field=FloatField())
+            total=Coalesce(Sum('grand_total'), 0.0, output_field=DecimalField(max_digits=10, decimal_places=2))
         )['total']
 
         earnings_data.append({
@@ -125,11 +131,11 @@ def get_period_metrics(start_date, end_date):
     )
 
     total_earnings = reservations.aggregate(
-        total=Coalesce(Sum('grand_total'), 0.0, output_field=FloatField())
+        total=Coalesce(Sum('grand_total'), 0.0, output_field=DecimalField(max_digits=10, decimal_places=2))
     )['total']
 
     total_costs = reservations.aggregate(
-        total=Coalesce(Sum('tax_amount'), 0.0, output_field=FloatField())
+        total=Coalesce(Sum('tax_amount'), 0.0, output_field=DecimalField(max_digits=10, decimal_places=2))
     )['total']
 
     guest_count = reservations.values('guest').distinct().count()
@@ -137,7 +143,7 @@ def get_period_metrics(start_date, end_date):
     avg_stay_duration = ReservationDetail.objects.filter(
         reservation__reservation_date__range=(start_date, end_date)
     ).aggregate(
-        avg_days=Coalesce(Avg('days'), 0.0, output_field=FloatField())
+        avg_days=Coalesce(Avg('days'), 0.0, output_field=DecimalField(max_digits=10, decimal_places=2))
     )['avg_days']
 
     occupancy_rate = calculate_occupancy_rate(start_date, end_date)
@@ -161,7 +167,7 @@ def calculate_occupancy_rate(start_date, end_date):
     occupied_room_days = ReservationDetail.objects.filter(
         reservation__reservation_date__range=(start_date, end_date)
     ).aggregate(
-        total_days=Coalesce(Sum('days'), 0, output_field=FloatField())
+        total_days=Coalesce(Sum('days'), 0, output_field=DecimalField(max_digits=10, decimal_places=2))
     )['total_days']
 
     return (occupied_room_days / total_room_days * 100) if total_room_days > 0 else 0
@@ -190,7 +196,7 @@ def get_daily_earnings(start_date, end_date):
         earning = Reservation.objects.filter(
             reservation_date=current_date
         ).aggregate(
-            total=Coalesce(Sum('grand_total'), 0.0, output_field=FloatField())
+            total=Coalesce(Sum('grand_total'), 0.0, output_field=DecimalField(max_digits=10, decimal_places=2))
         )['total']
 
         earnings_data.append({
@@ -222,3 +228,120 @@ def get_room_occupancy_comparison(p1_start, p1_end, p2_start, p2_end):
         'period_1_days': period_1_occupancy.get(room, 0),
         'period_2_days': period_2_occupancy.get(room, 0)
     } for room in all_rooms]
+
+
+def inventory_analysis_report(request):
+    # Get date range from request or use default (last 30 days)
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if not start_date or not end_date:
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=30)
+    else:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+    # Calculate key metrics
+    sales_data = Sales.objects.filter(date_added__range=[start_date, end_date])
+
+    total_sales = sales_data.aggregate(
+        total=Coalesce(Sum('grand_total', output_field=DecimalField(max_digits=10, decimal_places=2)), Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)))
+    )['total']
+
+    sales_items = SalesItems.objects.filter(sale__in=sales_data)
+
+    total_profit = sales_items.aggregate(
+        total_profit=Sum(
+            (F('price') - F('product__price')) * F('qty'),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )['total_profit'] or 0
+
+    top_products = (
+        sales_items
+        .values('product__product_name')
+        .annotate(
+            total_sales=Sum(
+                F('price') * F('qty'),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            ),
+            quantity_sold=Sum('qty', output_field=DecimalField(max_digits=10, decimal_places=2))
+        )
+        .order_by('-total_sales')[:5]
+    )
+
+    top_sellers = (
+        sales_data
+        .values('user__first_name', 'user__last_name')
+        .annotate(
+            total_sales=Sum('grand_total', output_field=DecimalField(max_digits=10, decimal_places=2))
+        )
+        .order_by('-total_sales')[:5]
+    )
+
+    purchases_by_supplier = (
+        Purchase.objects.filter(date_added__range=[start_date, end_date])
+        .values('supplier__supplier_name')
+        .annotate(
+            total_amount=Sum(
+                F('quantity') * F('price'),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            ),
+            total_quantity=Sum('quantity', output_field=DecimalField(max_digits=10, decimal_places=2))
+        )
+        .order_by('-total_amount')[:5]
+    )
+
+    misc_expenses = (
+        Miscellaneous.objects.filter(date__range=[start_date, end_date])
+        .values('type')
+        .annotate(
+            total_amount=Sum('amount', output_field=DecimalField(max_digits=10, decimal_places=2))
+        )
+        .order_by('-total_amount')
+    )
+
+    total_misc_expenses = sum(expense['total_amount'] for expense in misc_expenses)
+
+    total_products_sold = sales_items.aggregate(
+        total=Coalesce(Sum('qty', output_field=DecimalField(max_digits=10, decimal_places=2)), Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)))
+    )['total']
+
+    report_data = {
+        'start_date': start_date.strftime('%Y-%m-%d'),
+        'end_date': end_date.strftime('%Y-%m-%d'),
+        'total_sales': float(total_sales),
+        'total_profit': float(total_profit),
+        'total_products_sold': float(total_products_sold),
+        'total_misc_expenses': float(total_misc_expenses),
+        'top_products': [
+            {
+                'name': item['product__product_name'],
+                'total_sales': float(item['total_sales']),
+                'quantity_sold': float(item['quantity_sold'])
+            } for item in top_products
+        ],
+        'top_sellers': [
+            {
+                'name': f"{item['user__first_name']} {item['user__last_name']}",
+                'total_sales': float(item['total_sales'])
+            } for item in top_sellers
+        ],
+        'purchases_by_supplier': [
+            {
+                'supplier': item['supplier__supplier_name'],
+                'total_amount': float(item['total_amount']),
+                'total_quantity': float(item['total_quantity'])
+            } for item in purchases_by_supplier
+        ],
+        'misc_expenses': [
+            {
+                'type': item['type'],
+                'amount': float(item['total_amount'])
+            } for item in misc_expenses
+        ],
+    }
+
+    return render(request, 'analysis_report.html', report_data)
+

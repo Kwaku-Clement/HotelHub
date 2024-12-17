@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sales Analysis Dashboard{% endblock title %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+  .chart-container {
+    height: 350px;
+    width: 100%;
+  }
+  .metric-card {
+    transition: transform 0.3s ease-in-out;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .metric-card:hover {
+    transform: translateY(-5px);
+  }
+  .change-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .change-positive {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+  }
+  .change-negative {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Date Range Selector -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <form id="dateRangeForm" class="row">
+            <div class="col-md-5">
+              <label>Date Range</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="startDate" name="start_date" placeholder="Start Date">
+                <div class="input-group-append">
+                  <span class="input-group-text">to</span>
+                </div>
+                <input type="text" class="form-control" id="endDate" name="end_date" placeholder="End Date">
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn btn-primary w-100">Apply</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="row">
+    <!-- Total Sales -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="metric-card card border-left-primary h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Sales</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_sales|floatformat:2 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profit -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="metric-card card border-left-success h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Profit</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_profit|floatformat:2 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Products Sold -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="metric-card card border-left-info h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Products Sold</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products_sold }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Misc Expenses -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="metric-card card border-left-warning h-100">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Misc Expenses</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_misc_expenses|floatformat:2 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row">
+    <!-- Top 5 Products -->
+    <div class="col-xl-6 col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Top 5 Products</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="topProductsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 5 Sellers -->
+    <div class="col-xl-6 col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Top 5 Sellers</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="topSellersChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Charts Row -->
+  <div class="row">
+    <!-- Most Purchased Products & Suppliers -->
+    <div class="col-xl-8 col-lg-7">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Most Purchased Products by Supplier</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="purchasesBySupplierChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Miscellaneous Expenses -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Miscellaneous Expenses</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="miscExpensesChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date pickers
+    flatpickr("#startDate", {
+        dateFormat: "Y-m-d",
+        defaultDate: "{{ start_date|date:'Y-m-d' }}"
+    });
+    flatpickr("#endDate", {
+        dateFormat: "Y-m-d",
+        defaultDate: "{{ end_date|date:'Y-m-d' }}"
+    });
+
+    // Parse JSON data
+    const topProducts = JSON.parse('{{ top_products|safe }}');
+    const topSellers = JSON.parse('{{ top_sellers|safe }}');
+    const purchasesBySupplier = JSON.parse('{{ purchases_by_supplier|safe }}');
+    const miscExpenses = JSON.parse('{{ misc_expenses|safe }}');
+
+    // Top Products Chart
+    new Chart(document.getElementById("topProductsChart").getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: topProducts.map(item => item.name),
+            datasets: [{
+                label: 'Sales Amount',
+                data: topProducts.map(item => item.total_sales),
+                backgroundColor: 'rgba(78, 115, 223, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        callback: value => '₵' + value
+                    }
+                }]
+            }
+        }
+    });
+
+    // Top Sellers Chart
+    new Chart(document.getElementById("topSellersChart").getContext('2d'), {
+        type: 'horizontalBar',
+        data: {
+            labels: topSellers.map(item => item.name),
+            datasets: [{
+                label: 'Sales Amount',
+                data: topSellers.map(item => item.total_sales),
+                backgroundColor: 'rgba(28, 200, 138, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        callback: value => '₵' + value
+                    }
+                }]
+            }
+        }
+    });
+
+    // Purchases by Supplier Chart
+    new Chart(document.getElementById("purchasesBySupplierChart").getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: purchasesBySupplier.map(item => item.supplier),
+            datasets: [{
+                label: 'Purchase Amount',
+                data: purchasesBySupplier.map(item => item.total_amount),
+                backgroundColor: 'rgba(54, 185, 204, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        callback: value => '₵' + value
+                    }
+                }]
+            }
+        }
+    });
+
+    // Miscellaneous Expenses Chart
+    new Chart(document.getElementById("miscExpensesChart").getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: miscExpenses.map(item => item.type),
+            datasets: [{
+                data: miscExpenses.map(item => item.amount),
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(231, 74, 59, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            tooltips: {
+                callbacks: {
+                    label: (tooltipItem, data) => {
+                        const value = data.datasets[0].data[tooltipItem.index];
+                        return `₵${value.toFixed(2)}`;
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock javascripts %}

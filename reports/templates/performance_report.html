@@ -1,0 +1,29 @@
+{% extends "select_report.html" %}
+{% load static %}
+
+{% block report_content %}
+<h1>Performance Report</h1>
+<table id="performanceTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Total Sales</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in report_data %}
+            <tr>
+                <td>{{ data.product }}</td>
+                <td>${{ data.total_sales }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<button onclick="window.print()">Print</button>
+
+<script>
+    $(document).ready(function() {
+        $('#performanceTable').DataTable();
+    });
+</script>
+{% endblock report_content %}

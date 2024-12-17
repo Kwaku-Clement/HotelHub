@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Miscellaneous Expenses{% endblock %}
+
+{% block stylesheets %}
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
+<style>
+    .card-header .row {
+        align-items: center;
+    }
+    #miscellaneousSearch {
+        max-width: 250px;
+        border-radius: 15px;
+        padding: 5px 15px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'miscellaneous:miscellaneous_add' %}" class="btn btn-dark">
+            + Create Miscellaneous Expense
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Miscellaneous Expenses</h6>
+            <input type="text" class="form-control" id="miscellaneousSearch" placeholder="Search Expenses">
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in miscellaneous %}
+                        <tr>
+                            <td>{{ expense.id }}</td>
+                            <td>{{ expense.get_type_display }}</td>
+                            <td>{{ expense.description }}</td>
+                            <td>{{ expense.amount }}</td>
+                            <td>{{ expense.date }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'miscellaneous:miscellaneous_update' expense.id %}" class="btn btn-warning btn-sm" title="Update">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        data-id="{{ expense.id }}" 
+                                        data-description="{{ expense.description|escapejs }}" 
+                                        onclick="confirmDelete(this.dataset.id, this.dataset.description)" 
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        var tblMiscellaneous = $('#dataTable').DataTable({
+            dom: 'Brtip',
+            buttons: [
+                {
+                    extend: 'print',
+                    text: 'Print <i class="fas fa-file ml-2"></i>',
+                    titleAttr: 'Print',
+                    className: 'btn btn-info',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4]
+                    }
+                },
+                {
+                    extend: 'excelHtml5',
+                    text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                    titleAttr: 'Excel',
+                    className: 'btn btn-success ml-2',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4]
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                    titleAttr: 'PDF',
+                    className: 'btn btn-danger ml-2',
+                    download: 'open',
+                    orientation: 'vertical',
+                    pageSize: 'A4',
+                    title: '*',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4]
+                    },
+                    customize: function (doc) {
+                        doc.styles = {
+                            header: {
+                                fontSize: 18,
+                                bold: true,
+                                alignment: 'center'
+                            },
+                            subheader: {
+                                fontSize: 13,
+                                bold: true
+                            },
+                            quote: {
+                                italics: true
+                            },
+                            small: {
+                                fontSize: 8
+                            },
+                            tableHeader: {
+                                bold: true,
+                                fontSize: 11,
+                                color: 'white',
+                                fillColor: '#2d4154',
+                                alignment: 'center'
+                            }
+                        };
+                        doc.content[1].table.widths = ['10%', '10%', '30%', '30%', '20%'];
+                        doc.content[1].margin = [0, 35, 0, 0];
+                        doc.content[1].layout = {};
+                        doc['footer'] = (function (page, pages) {
+                            return {
+                                columns: [
+                                    {
+                                        alignment: 'left',
+                                        text: ['Creation date: ', {text: moment().format('MM-DD-YYYY (HH:mm:ss)')}]
+                                    },
+                                    {
+                                        alignment: 'right',
+                                        text: ['page ', {text: page.toString()}, ' de ', {text: pages.toString()}]
+                                    }
+                                ],
+                                margin: 20
+                            }
+                        });
+                    }
+                }
+            ],
+            columnDefs: [
+                { targets: [0], visible: false, searchable: false },
+                { targets: [-1], orderable: false }
+            ]
+        });
+
+        $('#miscellaneousSearch').on('keyup', function() {
+            tblMiscellaneous.search(this.value).draw();
+        });
+    });
+
+    function confirmDelete(id, description) {
+        if (confirm('Are you sure you want to delete the expense "' + description + '"?')) {
+            fetch('{% url "miscellaneous:miscellaneous_delete" 0 %}'.replace('/0', '/' + id), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Expense deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('Error deleting expense: ' + data.msg);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the expense.');
+            });
+        }
+    }
+</script>
+{% endblock %}
