@@ -42,11 +42,11 @@
                     <thead class="thead-light">
                         <tr>
                             <th>#</th>
-                            <th>Item</th>
+                            <th>Product</th>
+                            <th>Supplier</th>
                             <th>Quantity</th>
                             <th>Price</th>
-                            <th>Date Updated</th>
-                            <th class="text-center">Status</th>
+                            <th>Date Purchased</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -54,17 +54,12 @@
                         {% for p in purchases %}
                         <tr>
                             <td>{{ p.id }}</td>
-                            <td>{{ p.item }}</td>
+                            <td>{{ p.product }}</td>
+                            <td>{{ p.supplier }}</td>
                             <td>{{ p.quantity }}</td>
                             <td class="text-right">{{ p.price }} $</td>
                             <td>{{ p.date_updated }}</td>
-                            <td class="text-center">
-                                {% if p.status == "ACTIVE" %}
-                                    <span class="badge badge-success">{{ p.status }}</span>
-                                {% elif p.status == "INACTIVE" %}
-                                    <span class="badge badge-danger">{{ p.status }}</span>
-                                {% endif %}
-                            </td>
+                    
                             <td class="text-center">
                                 <a href="{% url 'inventory:purchase_update' p.id %}" class="btn btn-warning btn-sm" title="Update">
                                     <i class="fas fa-pen"></i>

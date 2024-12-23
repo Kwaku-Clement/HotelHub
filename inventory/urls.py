@@ -13,7 +13,6 @@ urlpatterns = [
     path('products/add/', views.products_add_view, name='product_create'),
     path('products/update/<int:product_id>/', views.products_update_view, name='product_update'),
     path('products/delete/<int:product_id>/', views.products_delete_view, name='product_delete'),
-    path('products/ajax/', views.get_products_ajax_view, name='get_products_ajax'),
 
     path('suppliers/', views.supplier_list, name='supplier_list'),
     path('suppliers/add/', views.supplier_create, name='supplier_create'),
@@ -24,7 +23,7 @@ urlpatterns = [
     path('purchases/add/', views.purchase_create, name='purchase_create'),
     path('purchases/update/<int:pk>/', views.purchase_update, name='purchase_update'),
     path('purchases/delete/<int:pk>/', views.purchase_delete, name='purchase_delete'),
-    path('get-products/', views.get_supplier_products, name='get_supplier_products'),
+    path('get-supplier-products/', views.get_supplier_products, name='get_supplier_products'),
 
     path('', views.home_view, name='home'),
 ]

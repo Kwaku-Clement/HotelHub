@@ -5,219 +5,323 @@
 
 {% block content %}
 <div class="container mt-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title mb-0">Create New Purchase</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Create New Purchase</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="purchaseForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Supplier Selection -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.supplier.id_for_label }}" class="form-label">
+                                {{ form.supplier.label }}{% if form.supplier.field.required %} *{% endif %}
+                            </label>
+                            {{ form.supplier }}
+                            {% if form.supplier.errors %}
+                                {% for error in form.supplier.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Product Information -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.supplier_product.id_for_label }}" class="form-label">
+                                {{ form.supplier_product.label }}{% if form.supplier_product.field.required %} *{% endif %}
+                            </label>
+                            {{ form.supplier_product }}
+                            {% if form.supplier_product.errors %}
+                                {% for error in form.supplier_product.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Category Information -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.supplier_category.id_for_label }}" class="form-label">
+                                {{ form.supplier_category.label }}{% if form.supplier_category.field.required %} *{% endif %}
+                            </label>
+                            {{ form.supplier_category }}
+                            {% if form.supplier_category.errors %}
+                                {% for error in form.supplier_category.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Current Stock -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Current Stock</label>
+                            <input type="text" id="current_stock" class="form-control" readonly>
+                        </div>
+
+                        <!-- Price Display -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">Price per Unit</label>
+                            <input type="text" id="price_per_unit" class="form-control" readonly>
+                        </div>
+
+                        <!-- Quantity Field -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.quantity.id_for_label }}" class="form-label">
+                                {{ form.quantity.label }}{% if form.quantity.field.required %} *{% endif %}
+                            </label>
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}
+                                {% for error in form.quantity.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            {% if form.quantity.help_text %}
+                                <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Total Amount -->
+                        <div class="form-group mb-4">
+                            <label class="form-label">Total Amount</label>
+                            <input type="text" id="total_amount" class="form-control" readonly>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'inventory:purchase_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Purchase</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-          {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}" role="alert">
-              {{ message }}
-            </div>
-            {% endfor %}
-          {% endif %}
-
-          <form method="post" novalidate>
-            {% csrf_token %}
-            
-            <!-- Supplier Field -->
-            <div class="form-group mb-3">
-              <label for="{{ form.supplier.id_for_label }}" class="form-label">
-                {{ form.supplier.label }}{% if form.supplier.field.required %} *{% endif %}
-              </label>
-              {{ form.supplier }}
-              {% if form.supplier.errors %}
-                {% for error in form.supplier.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
-              {% if form.supplier.help_text %}
-                <small class="form-text text-muted">{{ form.supplier.help_text }}</small>
-              {% endif %}
-            </div>
-
-            <!-- Product Field -->
-            <div class="form-group mb-3">
-              <label for="{{ form.product.id_for_label }}" class="form-label">
-                {{ form.product.label }}{% if form.product.field.required %} *{% endif %}
-              </label>
-              {{ form.product }}
-              {% if form.product.errors %}
-                {% for error in form.product.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
-              {% if form.product.help_text %}
-                <small class="form-text text-muted">{{ form.product.help_text }}</small>
-              {% endif %}
-            </div>
-
-            <!-- Current Stock -->
-            <div class="form-group mb-3">
-              <label class="form-label">Current Stock</label>
-              <input type="text" id="current_stock" class="form-control" readonly>
-            </div>
-
-            <!-- Quantity Field -->
-            <div class="form-group mb-3">
-              <label for="{{ form.quantity.id_for_label }}" class="form-label">
-                {{ form.quantity.label }}{% if form.quantity.field.required %} *{% endif %}
-              </label>
-              {{ form.quantity }}
-              {% if form.quantity.errors %}
-                {% for error in form.quantity.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
-              {% if form.quantity.help_text %}
-                <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
-              {% endif %}
-            </div>
-
-            <!-- Price Field -->
-            <div class="form-group mb-3">
-              <label for="{{ form.price.id_for_label }}" class="form-label">
-                {{ form.price.label }}{% if form.price.field.required %} *{% endif %}
-              </label>
-              {{ form.price }}
-              {% if form.price.errors %}
-                {% for error in form.price.errors %}
-                  <div class="invalid-feedback d-block">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
-              {% if form.price.help_text %}
-                <small class="form-text text-muted">{{ form.price.help_text }}</small>
-              {% endif %}
-            </div>
-
-            <!-- Total Field -->
-            <div class="form-group mb-3">
-              <label for="id_total" class="form-label">Total Amount</label>
-              <input type="text" id="id_total" class="form-control" readonly>
-            </div>
-
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-              <a href="{% url 'inventory:purchase_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
-              <button type="submit" class="btn btn-primary">Create Purchase</button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
-<!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
-<!--Datatable buttons-->
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.colVis.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"></script>
-<!--Moment JS-->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    $(document).ready(function() {
+        const supplierSelect = $("#id_supplier");
+        const productSelect = $("#id_supplier_product");
+        const categoryInput = $("#id_supplier_category");
+        const currentStockInput = $("#current_stock");
+        const priceInput = $("#price_per_unit");
+        const quantityInput = $("#id_quantity");
+        const totalAmountInput = $("#total_amount");
 
-$.ajaxSetup({
-    headers: {
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-    }
-});
-$(document).ready(function() {
-    
-    // When Supplier is selected
-    $("#id_supplier").change(function() {
-        var supplierId = $(this).val();
-        var productSelect = $("#id_product");
+        supplierSelect.select2({
+            placeholder: "Select a supplier",
+            width: '100%'
+        });
 
-        clearFormFields();  // Clear any existing values
+        // Supplier Change Handler
+        supplierSelect.change(function() {
+            const supplierId = $(this).val();
+            resetFormFields();
 
-        if (supplierId) {
-            // Disable product select while loading
-            productSelect.prop('disabled', true);
+            if (supplierId) {
+                productSelect.prop('disabled', true);
 
-            // Make AJAX request to fetch products for selected supplier
-            $.ajax({
-                url: "{% url 'inventory:get_supplier_products' %}",
-                data: {
-                    'supplier': supplierId
-                },
-                dataType: 'json',
-                success: function(data) {
-                    console.log("Response from server:", data);
-                    productSelect.empty().append('<option value="">Select a product</option>');
-
-                    if (data.products && data.products.length > 0) {
-                        data.products.forEach(function(product) {
-                            productSelect.append(
-                                $('<option>', {
-                                    value: product.id,
-                                    text: product.product_name,
-                                    'data-price': product.price,
-                                    'data-stock': product.quantity
-                                })
-                            );
-                        });
-                    } else {
-                        productSelect.append('<option value="">No products available</option>');
+                Swal.fire({
+                    title: 'Loading Products',
+                    text: 'Please wait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error loading products:", error);
-                    productSelect.empty().append('<option value="">Error loading products</option>');
-                },
-                complete: function() {
-                    productSelect.prop('disabled', false);
+                });
+
+                $.ajax({
+                    url: "{% url 'inventory:get_supplier_products' %}",
+                    data: { 'supplier': supplierId },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.products && data.products.length > 0) {
+                            const product = data.products[0]; // Get first product
+                            productSelect.val(product.product_name);
+                            categoryInput.val(product.category);
+                            currentStockInput.val(product.quantity);
+                            priceInput.val(product.price);
+                            quantityInput.prop('disabled', false);
+                            Swal.close();
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'No Products',
+                                text: 'No products available for this supplier.'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load products. Please try again.'
+                        });
+                    },
+                    complete: function() {
+                        productSelect.prop('disabled', false);
+                    }
+                });
+            }
+        });
+
+        // Quantity Input Handler
+        quantityInput.on('input', function() {
+            const value = parseInt($(this).val());
+            const currentStock = parseInt(currentStockInput.val());
+            const price = parseFloat(priceInput.val()) || 0;
+
+            if (value && value < 0) {
+                $(this).val(0);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Quantity',
+                    text: 'Quantity cannot be negative!'
+                });
+            }
+
+            if (value > currentStock) {
+                $(this).val(currentStock);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Exceeds Stock',
+                    text: `Cannot purchase more than current stock (${currentStock} units)`
+                });
+            }
+
+            updateTotal();
+        });
+
+        function updateTotal() {
+            const quantity = parseFloat(quantityInput.val()) || 0;
+            const price = parseFloat(priceInput.val()) || 0;
+            const total = quantity * price;
+            totalAmountInput.val(total.toFixed(2));
+        }
+
+        function resetFormFields() {
+            productSelect.val('');
+            categoryInput.val('');
+            currentStockInput.val('');
+            priceInput.val('');
+            quantityInput.val('');
+            totalAmountInput.val('');
+            quantityInput.prop('disabled', true);
+        }
+
+        // Form Validation and Submission
+        $("#purchaseForm").submit(function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirm Purchase',
+                html: `
+                    <div class="text-left">
+                        <p><strong>Supplier:</strong> ${supplierSelect.find("option:selected").text()}</p>
+                        <p><strong>Product:</strong> ${productSelect.val()}</p>
+                        <p><strong>Category:</strong> ${categoryInput.val()}</p>
+                        <p><strong>Quantity:</strong> ${quantityInput.val()}</p>
+                        <p><strong>Price per unit:</strong> $${priceInput.val()}</p>
+                        <p><strong>Total Amount:</strong> $${totalAmountInput.val()}</p>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Confirm Purchase'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Processing Purchase',
+                        html: 'Please wait while we process your request...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    this.submit();
                 }
             });
-        } else {
-            productSelect.empty().append('<option value="">Select a supplier first</option>');
+        });
+
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = $('#purchaseForm').find('select[required], input[required]');
+            
+            requiredFields.each(function() {
+                if (!$(this).val()) {
+                    isValid = false;
+                    $(this).addClass('is-invalid');
+                    const fieldName = $(this).prev('label').text().replace(' *', '');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Required Field',
+                        text: `Please fill in the ${fieldName} field`
+                    });
+                    return false;
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            if (!isValid) return false;
+
+            const quantity = parseInt(quantityInput.val());
+            const currentStock = parseInt(currentStockInput.val());
+            const price = parseFloat(priceInput.val());
+
+            if (quantity <= 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Quantity',
+                    text: 'Quantity must be greater than zero'
+                });
+                return false;
+            }
+
+            if (quantity > currentStock) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Insufficient Stock',
+                    text: `Cannot purchase more than available stock (${currentStock} units)`
+                });
+                return false;
+            }
+
+            if (price <= 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Price',
+                    text: 'Price must be greater than zero'
+                });
+                return false;
+            }
+
+            return true;
         }
+
+        // Initialize form state
+        resetFormFields();
     });
-
-    // When product is selected, show price and stock
-    $("#id_product").change(function() {
-        var selectedOption = $(this).find("option:selected");
-        var price = selectedOption.data("price");
-        var stock = selectedOption.data("stock");
-        
-        $("#id_price").val(price || "");
-        $("#current_stock").val(stock || "");
-        updateTotal();
-    });
-
-    // Handle quantity and price changes
-    $("#id_quantity, #id_price").on('input', function() {
-        updateTotal();
-    });
-
-    // Calculate total
-    function updateTotal() {
-        var quantity = parseFloat($("#id_quantity").val()) || 0;
-        var price = parseFloat($("#id_price").val()) || 0;
-        var total = quantity * price;
-        $("#id_total").val(total.toFixed(2));
-    }
-
-    // Helper function to clear form fields
-    function clearFormFields() {
-        $("#id_product").empty().append('<option value="">Select a product</option>');
-        $("#current_stock").val("");
-        $("#id_price").val("");
-        $("#id_quantity").val("");
-        $("#id_total").val("");
-    }
-});
 </script>
-{% endblock javascripts %}
-
+{% endblock %}

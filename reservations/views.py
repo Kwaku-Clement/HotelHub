@@ -161,22 +161,24 @@ def reservations_report_view(request):
     }
     start_date, end_date = time_ranges.get(time_filter, (None, None))
 
-    cache_key = f"reservations_report_{time_filter}_{start_date}_{end_date}"
-    reservations = cache.get(cache_key)
-    if not reservations:
-        reservations = (
-            list(
+    # If no date range is selected, return an empty list of reservations
+    if not start_date or not end_date:
+        reservations = []
+    else:
+        cache_key = f"reservations_report_{time_filter}_{start_date}_{end_date}"
+        reservations = cache.get(cache_key)
+        if not reservations:
+            reservations = list(
                 Reservation.objects.prefetch_related('reservationdetail_set__room')
                 .select_related('guest')
                 .filter(reservation_date__range=(start_date, end_date))
             )
-            if start_date and end_date
-            else list(
-                Reservation.objects.prefetch_related('reservationdetail_set__room')
-                .select_related('guest')
-            )
-        )
-        cache.set(cache_key, reservations, timeout=3600)
+            cache.set(cache_key, reservations, timeout=3600)
+
+    # Calculate grand total and number of days for each reservation
+    grand_total = sum(r.grand_total for r in reservations)
+    for r in reservations:
+        r.days_spent = (r.check_out - r.check_in).days
 
     context = {
         "active_icon": "report",
@@ -184,9 +186,9 @@ def reservations_report_view(request):
         "time_filter": time_filter,
         "start_date": start_date,
         "end_date": end_date,
+        "grand_total": grand_total,
     }
     return render(request, "reservations_report.html", context=context)
-
 
 @login_required(login_url="authentication/login/")
 def update_reservation_status_view(request, reservation_id, status):
