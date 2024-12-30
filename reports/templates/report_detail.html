@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Details{% endblock title %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .container {
+        margin-top: 50px;
+    }
+    .card {
+        margin-bottom: 20px;
+    }
+    .card-title {
+        font-size: 1.5rem;
+    }
+    .report-data {
+        white-space: pre-wrap;
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <h1 class="card-title">Report Details</h1>
+            <h2>{{ store_name }}</h2>
+            <p><strong>Selected Date Range:</strong> {{ selected_date_range }}</p>
+
+            <h2>Financial Report</h2>
+            <p><strong>Total Revenue:</strong> ${{ total_revenue|floatformat:2 }}</p>
+            <p><strong>Total Expenses:</strong> ${{ total_expenses|floatformat:2 }}</p>
+            <p><strong>Profit/Loss:</strong> ${{ profit_loss|floatformat:2 }}</p>
+            <h3>Detailed Explanation</h3>
+            <p class="report-data">{{ explanation|linebreaksbr }}</p>
+
+            <h3>Top 5 Performing Categories</h3>
+            <ul>
+                {% for category in report_data.category_sales|slice:":5" %}
+                    <li>{{ category.category }}: ${{ category.total_sales|floatformat:2 }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Top 5 Performing Products</h3>
+            <ul>
+                {% for product in report_data.product_sales|slice:":5" %}
+                    <li>{{ product.product }}: ${{ product.total_sales|floatformat:2 }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Top 3 Employers</h3>
+            <ul>
+                {% for employer in report_data.top_employers|slice:":3" %}
+                    <li>{{ employer.employer }}: ${{ employer.total_sales|floatformat:2 }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Miscellaneous Expenditures</h3>
+            <ul>
+                {% for expense in miscellaneous_expenses %}
+                    <li>{{ expense.type }}: ${{ expense.amount|floatformat:2 }} - {{ expense.description }}</li>
+                {% endfor %}
+            </ul>
+            <p><strong>Total Miscellaneous Expenditures:</strong> ${{ total_miscellaneous|floatformat:2 }}</p>
+        </div>
+    </div>
+</div>
+{% endblock content %}

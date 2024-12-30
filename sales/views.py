@@ -80,12 +80,11 @@ def checkout_modal(request):
     }
     return render(request, 'checkout.html', context)
 
-
 @login_required(login_url="authentication/login/")
 def create_sales_view(request):
     products = Product.objects.filter(status="ACTIVE").only("id", "product_name", "price")
     products_list = [p.to_select2() for p in products]
-    
+
     context = {
         "active_icon": "sales",
         "products": products_list,
@@ -95,7 +94,7 @@ def create_sales_view(request):
         try:
             with transaction.atomic():  # Start database transaction
                 data = json.loads(request.body)
-                
+
                 # Convert string values to Decimal for precise calculation
                 sub_total = Decimal(str(data["sub_total"]))
                 tax_percent = Decimal(str(data["tax"]))
@@ -120,11 +119,11 @@ def create_sales_view(request):
                 for item_data in data["items"]:
                     product = Product.objects.select_for_update().get(id=int(item_data["product_id"]))
                     qty = int(item_data["qty"])
-                    
+
                     # Check if enough stock is available
                     if product.quantity < qty:
                         raise ValueError(f"Insufficient stock for {product.product_name}")
-                    
+
                     # Create sale item
                     SalesItems.objects.create(
                         sale=sale,
@@ -133,7 +132,7 @@ def create_sales_view(request):
                         qty=qty,
                         total=Decimal(str(item_data["total"]))
                     )
-                    
+
                     # Update product quantity
                     product.quantity -= qty
                     product.save()
@@ -155,7 +154,7 @@ def create_sales_view(request):
                 "message": f"An error occurred: {str(e)}"
             }, status=500)
 
-    return render(request, "create_sales.html", context=context, )
+    return render(request, "create_sales.html", context=context)
 
 @csrf_exempt
 def process_payment(request):
@@ -163,14 +162,14 @@ def process_payment(request):
         try:
             with transaction.atomic():
                 data = json.loads(request.body)
-                
+
                 # Validate payment data
                 if not all(key in data for key in ['amount_paid', 'grand_total']):
                     raise ValueError("Missing required payment information")
-                
+
                 amount_paid = Decimal(str(data['amount_paid']))
                 grand_total = Decimal(str(data['grand_total']))
-                
+
                 if amount_paid < grand_total:
                     raise ValueError("Insufficient payment amount")
 
@@ -180,7 +179,7 @@ def process_payment(request):
                     "message": "Payment processed successfully",
                     "change": str(amount_paid - grand_total)
                 })
-                
+
         except ValueError as e:
             return JsonResponse({
                 "status": "error",
@@ -191,7 +190,7 @@ def process_payment(request):
                 "status": "error",
                 "message": f"Payment processing error: {str(e)}"
             }, status=500)
-    
+
     return JsonResponse({
         "status": "error",
         "message": "Invalid request method"

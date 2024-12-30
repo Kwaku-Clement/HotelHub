@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" id="supplierForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h3 class="h4">Supplier Information</h3>
+                            {% for field in supplier_form %}
+                            <div class="form-group mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}{% if field.field.required %} *{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="h4">Product Information</h3>
+                            <div id="product-formset">
+                                {{ product_formset.management_form }}
+                                {% for form in product_formset.forms %}
+                                <div class="product-form card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            {% for field in form.visible_fields %}
+                                            <div class="col-md-6 mb-3">
+                                                <label for="{{ field.id_for_label }}" class="form-label">
+                                                    {{ field.label }}{% if field.field.required %} *{% endif %}
+                                                </label>
+                                                {{ field }}
+                                                {% if field.errors %}
+                                                    {% for error in field.errors %}
+                                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                            {% for hidden in form.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                        </div>
+                                        <button type="button" class="btn btn-danger btn-sm remove-form float-end">Remove</button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="add-product">Add Product</button>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'inventory:supplier_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">{{ title }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function() {
+        const productFormset = $('#product-formset');
+        const addProductBtn = $('#add-product');
+        let formCount = parseInt($('#id_form-TOTAL_FORMS').val());
+
+        function updateFormIndices() {
+            $('.product-form').each(function(index) {
+                $(this).find('input, select').each(function() {
+                    const name = $(this).attr('name');
+                    if (name) {
+                        const newName = name.replace(/form-\d+/, `form-${index}`);
+                        $(this).attr('name', newName);
+                        $(this).attr('id', newName);
+                    }
+                });
+            });
+        }
+
+        addProductBtn.click(function() {
+            const emptyForm = $('.product-form').first().clone(true);
+            emptyForm.find('input').val('');
+            emptyForm.find('.invalid-feedback').remove();
+            emptyForm.find('.is-invalid').removeClass('is-invalid');
+            
+            productFormset.append(emptyForm);
+            formCount++;
+            $('#id_form-TOTAL_FORMS').val(formCount);
+            updateFormIndices();
+        });
+
+        $(document).on('click', '.remove-form', function() {
+            if (formCount > 1) {
+                $(this).closest('.product-form').remove();
+                formCount--;
+                $('#id_form-TOTAL_FORMS').val(formCount);
+                updateFormIndices();
+            }
+        });
+
+        $('#supplierForm').submit(function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            $(this).find('input[required]').each(function() {
+                if (!$(this).val()) {
+                    isValid = false;
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: 'Please fill in all required fields!'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Processing...',
+                html: 'Please wait while we process your request',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            this.submit();
+        });
+    });
+</script>
+{% endblock %}

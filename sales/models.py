@@ -1,9 +1,9 @@
 from datetime import datetime
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
-from django.conf import settings
 from authentication.models import Users
 from inventory.models import Product
+from decimal import Decimal
 
 class Sales(models.Model):
     code = models.CharField(max_length=100, unique=True)
@@ -22,6 +22,9 @@ class Sales(models.Model):
         if not self.pk:
             sales_today = Sales.objects.filter(date_added__date=timezone.now().date()).count()
             self.code = f"SALE-{sales_today + 1:04d}"
+            while Sales.objects.filter(code=self.code).exists():
+                sales_today += 1
+                self.code = f"SALE-{sales_today:04d}"
         super().save(*args, **kwargs)
 
     def __str__(self):

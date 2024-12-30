@@ -4,7 +4,6 @@ from datetime import date, timedelta
 class ReportSelectionForm(forms.Form):
     REPORT_TYPE_CHOICES = [
         ('financial', 'Financial Report'),
-        ('performance', 'Performance Report'),
     ]
 
     report_type = forms.ChoiceField(choices=REPORT_TYPE_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))

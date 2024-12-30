@@ -18,11 +18,6 @@
         border: none;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-    /* .card-header {
-        background-color: #007bff;
-        color: white;
-        padding: 15px;
-    } */
     .card-header .row {
         align-items: center;
     }
@@ -65,7 +60,6 @@
 </style>
 {% endblock stylesheets %}
 
-{% comment %} Page content {% endcomment %}
 {% block content %}
 <div class="container-fluid">
     <div class="card shadow mb-4">
@@ -95,32 +89,41 @@
                             <th>Check-In</th>
                             <th>Check-Out</th>
                             <th>Room Name(s)</th>
+                            <th>Days</th>
                             <th>Grand Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for r in reservations %}
-                        <tr>
-                            <td>{{ r.id }}</td>
-                            <td>{{ r.reservation_date|date:"d-m-Y" }}</td>
-                            <td>{{ r.created_by.username }}</td>
-                            <td>{{ r.guest.get_full_name }}</td>
-                            <td>{{ r.check_in|date:"d-m-Y" }}</td>
-                            <td>{{ r.check_out|date:"d-m-Y" }}</td>
-                            <td>
-                                {% for detail in r.reservationdetail_set.all %}
-                                {{ detail.room.name }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>{{ r.grand_total }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="no-reservations">No reservations found.</td>
-                        </tr>
-                        {% endfor %}
+                        {% if reservations %}
+                            {% for r in reservations %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.reservation_date|date:"d-m-Y" }}</td>
+                                <td>{{ r.created_by.username }}</td>
+                                <td>{{ r.guest.get_full_name }}</td>
+                                <td>{{ r.check_in|date:"d-m-Y" }}</td>
+                                <td>{{ r.check_out|date:"d-m-Y" }}</td>
+                                <td>
+                                    {% for detail in r.reservationdetail_set.all %}
+                                    {{ detail.room.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ r.days_spent }}</td>
+                                <td>{{ r.grand_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="no-reservations">No reservations found.</td>
+                            </tr>
+                        {% endif %}
                     </tbody>
+                    
                 </table>
+            </div>
+            <div class="mt-4">
+                <h5>Summary</h5>
+                <p><strong>Grand Total:</strong> {{ grand_total }}</p>
             </div>
         </div>
     </div>
@@ -144,7 +147,7 @@
 
 <script>
 $(document).ready(function() {
-    tblReservation = $('#dataTable').DataTable({
+    $('#dataTable').DataTable({
         dom: 'Brt',
         buttons: [
             {
@@ -153,7 +156,7 @@ $(document).ready(function() {
                 titleAttr: 'Print',
                 className: 'btn btn-info',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                 }
             },
             {
@@ -162,7 +165,7 @@ $(document).ready(function() {
                 titleAttr: 'Excel',
                 className: 'btn btn-success ml-2',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                 }
             },
             {
@@ -175,7 +178,7 @@ $(document).ready(function() {
                 pageSize: 'A4',
                 title: '*',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                 },
                 customize: function(doc) {
                     doc.styles = {

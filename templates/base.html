@@ -55,12 +55,11 @@
                         <h1 class="h3 mb-0 text-gray-800">{% block heading %}{% endblock %}</h1>
                     </div>
 
-                    <!--Messages will appear here-->
-                    {% include 'messages.html' with messages=messages%}
+                    <!-- Messages will appear here -->
+                    {% include 'messages.html' with messages=messages %}
 
-                    <!--Page content goes here-->
+                    <!-- Page content goes here -->
                     {% block content %}{% endblock content %}
-
 
                 </div>
                 <!-- /.container-fluid -->
@@ -78,31 +77,32 @@
     </div>
     <!-- End of Page Wrapper -->
 
-    <!-- Scroll to Top Button-->
+    <!-- Scroll to Top Button -->
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Logout Modal-->
+    <!-- Logout Modal -->
     {% include 'logout_modal.html' %}
-    <!-- End ofLogout Modal-->
+    <!-- End of Logout Modal -->
 
-
-    <!-- Bootstrap core JavaScript-->
+    <!-- Bootstrap core JavaScript -->
     <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
-    <!-- Core plugin JavaScript-->
+    <!-- Core plugin JavaScript -->
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
-    <!-- Custom scripts for all pages-->
+    <!-- Custom scripts for all pages -->
     <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
 
-    <!--JavaScript to dissapear messagess automatically-->
-    {% comment %} <script type='text/javascript' src="{% static 'js/dissapear_messages.js' %}"></script> {% endcomment %}
+    <!-- Chart.js -->
+    <script src="{% static 'vendor/chart.js/Chart.bundle.js' %}"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Page level custom scripts -->
-    <!-- Specific Page JS goes HERE  -->
     {% block javascripts %}{% endblock javascripts %}
 
 </body>

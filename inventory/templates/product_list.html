@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-<!-- Page title  -->
+
 {% block title %}Products{% endblock title %}
 
-<!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <style>
     .card-header .row {
         align-items: center;
@@ -27,12 +26,10 @@
 </style>
 {% endblock stylesheets %}
 
-<!-- Page content  -->
 {% block content %}
-
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'inventory:product_create' %}" class="btn btn-dark">
+        <a href="{% url 'inventory:product_create_update' %}" class="btn btn-dark">
             + Create Product
         </a>
     </div>
@@ -74,7 +71,7 @@
                             </td>
                             <td class="text-center">{{ p.quantity }}</td>
                             <td class="text-center">
-                                <a href="{% url 'inventory:product_update' p.id %}" class="btn btn-warning btn-sm" title="Update">
+                                <a href="{% url 'inventory:product_create_update' p.id %}" class="btn btn-warning btn-sm" title="Update">
                                     <i class="fas fa-pen"></i>
                                 </a>
                                 <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal-{{ p.id }}" title="Delete">
@@ -112,7 +109,6 @@
 </div>
 {% endblock content %}
 
-<!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
@@ -231,7 +227,7 @@
 
 // Alert when trying to delete a product
 $('#dataTable tbody')
-    // Event when whe try to delete a product
+    // Event when we try to delete a product
     // We update the text, and href of the modal delete button
     .on('click', 'button[rel="delete"]', function () {
     // Row variable

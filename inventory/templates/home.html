@@ -1,14 +1,23 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block stylesheets %}
+{% extends "base.html" %} {% load static %} {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet" />
+<link
+  href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}"
+  rel="stylesheet"
+/>
 <!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" />
+<link
+  href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+/>
 <!-- Bootstrap Touchspin -->
-<link rel="stylesheet" href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}" />
+<link
+  rel="stylesheet"
+  href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}"
+/>
 <style>
   body {
     background-color: #f3f4f6;
@@ -65,10 +74,18 @@
     height: 3.5rem;
     margin-bottom: 1rem;
   }
-  .icon-container.green { background-color: #10b981; }
-  .icon-container.blue { background-color: #3b82f6; }
-  .icon-container.cyan { background-color: #06b6d4; }
-  .icon-container.yellow { background-color: #f59e0b; }
+  .icon-container.green {
+    background-color: #10b981;
+  }
+  .icon-container.blue {
+    background-color: #3b82f6;
+  }
+  .icon-container.cyan {
+    background-color: #06b6d4;
+  }
+  .icon-container.yellow {
+    background-color: #f59e0b;
+  }
   .icon-container i {
     color: white;
     font-size: 1.5rem;
@@ -128,11 +145,9 @@
     }
   }
 </style>
-{% endblock stylesheets %}
-
-{% block content %}
+{% endblock stylesheets %} {% block content %}
 <div class="container-fluid">
-  <h1>Dashboard</h1>
+  <h1>POINT OF SALES</h1>
 
   <div class="row">
     <div class="col-md-6 col-lg-3">
@@ -143,7 +158,6 @@
               <i class="fas fa-dollar-sign"></i>
             </div>
             <h5 class="card-title">Point Of Sales</h5>
-            <p class="card-number">0</p>
             <p class="card-subtitle">Total Sales Today</p>
           </div>
         </div>
@@ -158,7 +172,6 @@
               <i class="fas fa-list"></i>
             </div>
             <h5 class="card-title">Categories</h5>
-            <p class="card-number">10</p>
             <p class="card-subtitle">Number of Categories</p>
           </div>
         </div>
@@ -173,7 +186,6 @@
               <i class="fas fa-box"></i>
             </div>
             <h5 class="card-title">Products</h5>
-            <p class="card-number">33</p>
             <p class="card-subtitle">Number of Products</p>
           </div>
         </div>
@@ -188,7 +200,6 @@
               <i class="fas fa-truck"></i>
             </div>
             <h5 class="card-title">Suppliers</h5>
-            <p class="card-number">0</p>
             <p class="card-subtitle">Suppliers List</p>
           </div>
         </div>
@@ -196,18 +207,30 @@
     </div>
 
     <div class="col-md-6 col-lg-3">
-        <a href="{% url 'inventory:purchase_list' %}" class="card-link">
-          <div class="dashboard-card">
-            <div class="card-content">
-              <div class="icon-container yellow">
-                <i class="fas fa-shopping-cart"></i>
-              </div>
-              <h5 class="card-title">Purchases</h5>
-              <p class="card-number">0</p>
-              <p class="card-subtitle">Purchases List</p>
+      <a href="{% url 'inventory:purchase_list' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container yellow">
+              <i class="fas fa-shopping-cart"></i>
             </div>
+            <h5 class="card-title">Purchases</h5>
+            <p class="card-subtitle">Purchases List</p>
           </div>
-        </a>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+      <a href="{% url 'inventory:add_miscellaneous' %}" class="card-link">
+        <div class="dashboard-card">
+          <div class="card-content">
+            <div class="icon-container yellow">
+              <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h5 class="card-title">Miscellaneous</h5>
+          </div>
+        </div>
+      </a>
     </div>
 
     <div class="col-md-6 col-lg-3">
@@ -218,12 +241,12 @@
               <i class="fas fa-book"></i>
             </div>
             <h5 class="card-title">Reports</h5>
-            <p class="card-number">0</p>
             <p class="card-subtitle">Generate Reports</p>
           </div>
         </div>
       </a>
-    </div><div class="col-md-6 col-lg-3">
+    </div>
+    <div class="col-md-6 col-lg-3">
       <a href="{% url 'dashboard:analysis_report' %}" class="card-link">
         <div class="dashboard-card">
           <div class="card-content">

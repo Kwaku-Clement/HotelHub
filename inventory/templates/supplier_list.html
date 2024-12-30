@@ -1,14 +1,12 @@
-{% extends "base.html" %} {% load static %}
+{% extends "base.html" %}
+{% load static %}
 <!-- Page title  -->
 {% block title %}Suppliers{% endblock title %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link
-  href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}"
-  rel="stylesheet"
-/>
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet" />
 <link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet" />
 <style>
   .card-header .row {
@@ -28,31 +26,19 @@
 
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <a href="{% url 'inventory:supplier_create' %}" class="btn btn-dark">
+    <a href="{% url 'inventory:supplier_create_update' %}" class="btn btn-dark">
       + Create Supplier
     </a>
   </div>
 
   <div class="card shadow mb-4">
-    <div
-      class="card-header py-3 d-flex justify-content-between align-items-center"
-    >
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
       <h6 class="m-0 font-weight-bold text-primary">Suppliers</h6>
-      <input
-        type="text"
-        class="form-control"
-        id="suppliersSearch"
-        placeholder="Search Suppliers"
-      />
+      <input type="text" class="form-control" id="suppliersSearch" placeholder="Search Suppliers" />
     </div>
     <div class="card-body">
       <div class="table-responsive">
-        <table
-          class="table table-bordered table-hover"
-          id="dataTable"
-          width="100%"
-          cellspacing="0"
-        >
+        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
           <thead class="thead-light">
             <tr>
               <th>#</th>
@@ -68,14 +54,14 @@
           
           <tbody>
             {% for supplier in suppliers %}
-              {% for product in supplier.products.all %}
+              {% for supplier_product in supplier.supplier_products.all %}
                 <tr>
                   <td>{{ supplier.id }}</td>
                   <td>{{ supplier.supplier_name }}</td>
                   <td>{{ supplier.contact_info }}</td>
-                  <td>{{ product.product_name }}</td>
-                  <td>{{ product.quantity }}</td>
-                  <td>{{ product.price }}</td>
+                  <td>{{ supplier_product.product_name }}</td>
+                  <td>{{ supplier_product.quantity }}</td>
+                  <td>{{ supplier_product.price }}</td>
                   <td class="text-center">
                     {% if supplier.status == "ACTIVE" %}
                       <span class="badge badge-success">{{ supplier.status }}</span>
@@ -84,7 +70,7 @@
                     {% endif %}
                   </td>
                   <td class="text-center">
-                    <a href="{% url 'inventory:supplier_update' supplier.id %}" class="btn btn-warning btn-sm" title="Update">
+                    <a href="{% url 'inventory:supplier_create_update' supplier.id %}" class="btn btn-warning btn-sm" title="Update">
                       <i class="fas fa-pen"></i>
                     </a>
                     <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal-{{ supplier.id }}" title="Delete">
@@ -118,7 +104,6 @@
               {% endfor %}
             {% endfor %}
           </tbody>
-          
         </table>
       </div>
     </div>
@@ -132,39 +117,15 @@
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 <!--Datatable buttons-->
-<script
-  type="text/javascript"
-  src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"
-></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"></script>
 <!--Moment JS-->
-<script
-  type="text/javascript"
-  src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"
-></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 
 <!--Datatables-->
 <script>
@@ -251,7 +212,11 @@
         },
       ],
     });
+
+    // Custom search input
+    $('#suppliersSearch').on('keyup', function() {
+      tblSuppliers.search(this.value).draw();
+    });
   });
 </script>
-
 {% endblock javascripts %}

@@ -1,20 +1,18 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Sales Analysis Dashboard{% endblock title %}
+{% block title %}Period Comparison Analysis{% endblock title %}
 
 {% block stylesheets %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <style>
   .chart-container {
     height: 350px;
-    width: 100%;
+    position: relative;
+    margin-bottom: 1rem;
   }
   .metric-card {
     transition: transform 0.3s ease-in-out;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   .metric-card:hover {
     transform: translateY(-5px);
@@ -40,279 +38,453 @@
 
 {% block content %}
 <div class="container-fluid">
-  <!-- Date Range Selector -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body">
-          <form id="dateRangeForm" class="row">
-            <div class="col-md-5">
-              <label>Date Range</label>
-              <div class="input-group">
-                <input type="text" class="form-control" id="startDate" name="start_date" placeholder="Start Date">
-                <div class="input-group-append">
-                  <span class="input-group-text">to</span>
+    <!-- Date Range Selector -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="periodComparisonForm" method="GET" class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label">Period 1</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="period1Start" name="period1_start" placeholder="Start Date" value="{{ period1_start }}">
+                                <span class="input-group-text">to</span>
+                                <input type="text" class="form-control" id="period1End" name="period1_end" placeholder="End Date" value="{{ period1_end }}">
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Period 2</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="period2Start" name="period2_start" placeholder="Start Date" value="{{ period2_start }}">
+                                <span class="input-group-text">to</span>
+                                <input type="text" class="form-control" id="period2End" name="period2_end" placeholder="End Date" value="{{ period2_end }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">Compare Periods</button>
+                        </div>
+                    </form>
                 </div>
-                <input type="text" class="form-control" id="endDate" name="end_date" placeholder="End Date">
-              </div>
             </div>
-            <div class="col-md-2">
-              <label>&nbsp;</label>
-              <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row">
+        <!-- Total Sales -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="metric-card card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Sales
+                                <span class="change-indicator {% if comparison.sales_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                                    {{ comparison.sales_change|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ period1.total_sales|floatformat:2 }}</div>
+                            <div class="text-muted small">Period 2: ₵{{ period2.total_sales|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </form>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Key Metrics -->
-  <div class="row">
-    <!-- Total Sales -->
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="metric-card card border-left-primary h-100">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Sales</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_sales|floatformat:2 }}</div>
+        <!-- Total Profit -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="metric-card card border-left-success h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Profit
+                                <span class="change-indicator {% if comparison.profit_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                                    {{ comparison.profit_change|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ period1.total_profit|floatformat:2 }}</div>
+                            <div class="text-muted small">Period 2: ₵{{ period2.total_profit|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Profit -->
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="metric-card card border-left-success h-100">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Profit</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_profit|floatformat:2 }}</div>
+        <!-- Products Sold -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="metric-card card border-left-info h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Products Sold
+                                <span class="change-indicator {% if comparison.products_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                                    {{ comparison.products_change|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ period1.total_products_sold|floatformat:0 }}</div>
+                            <div class="text-muted small">Period 2: {{ period2.total_products_sold|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Total Products Sold -->
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="metric-card card border-left-info h-100">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Products Sold</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products_sold }}</div>
+        <!-- Expenses -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="metric-card card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Expenses
+                                <span class="change-indicator {% if comparison.expenses_change >= 0 %}change-positive{% else %}change-negative{% endif %}">
+                                    {{ comparison.expenses_change|floatformat:1 }}%
+                                </span>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ period1.total_misc_expenses|floatformat:2 }}</div>
+                            <div class="text-muted small">Period 2: ₵{{ period2.total_misc_expenses|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
 
-    <!-- Misc Expenses -->
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="metric-card card border-left-warning h-100">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Misc Expenses</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">₵{{ total_misc_expenses|floatformat:2 }}</div>
+    <!-- Trend Analysis -->
+    <div class="row">
+        <!-- Sales Trend Analysis -->
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Sales Trend Analysis
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                Period 1: {{ trend_analysis.period1_trend|floatformat:1 }}%
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                Period 2: {{ trend_analysis.period2_trend|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Charts Row -->
-  <div class="row">
-    <!-- Top 5 Products -->
-    <div class="col-xl-6 col-lg-6">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Top 5 Products</h6>
-        </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="topProductsChart"></canvas>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Top 5 Sellers -->
-    <div class="col-xl-6 col-lg-6">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Top 5 Sellers</h6>
+    <!-- Charts -->
+    <div class="row">
+        <!-- Top Products Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Products Comparison</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="topSellersChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Additional Charts Row -->
-  <div class="row">
-    <!-- Most Purchased Products & Suppliers -->
-    <div class="col-xl-8 col-lg-7">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Most Purchased Products by Supplier</h6>
+        <!-- Top Sellers Chart -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Sellers Comparison</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="topSellersChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="purchasesBySupplierChart"></canvas>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Miscellaneous Expenses -->
-    <div class="col-xl-4 col-lg-5">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Miscellaneous Expenses</h6>
+    <!-- Additional Charts -->
+    <div class="row">
+        <!-- Sales Trend -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Sales Comparison</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="salesComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="miscExpensesChart"></canvas>
-          </div>
+
+        <!-- Expenses Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Expenses Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="expensesChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock content %}
 
 {% block javascripts %}
-<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize date pickers
-    flatpickr("#startDate", {
+    const dateConfig = {
         dateFormat: "Y-m-d",
-        defaultDate: "{{ start_date|date:'Y-m-d' }}"
-    });
-    flatpickr("#endDate", {
-        dateFormat: "Y-m-d",
-        defaultDate: "{{ end_date|date:'Y-m-d' }}"
+        maxDate: "today"
+    };
+
+    flatpickr("#period1Start", dateConfig);
+    flatpickr("#period1End", dateConfig);
+    flatpickr("#period2Start", dateConfig);
+    flatpickr("#period2End", dateConfig);
+
+    // Parse the chart data
+    const chartData = {
+        topProducts1: JSON.parse('{{ period1_top_products|escapejs }}'),
+        topProducts2: JSON.parse('{{ period2_top_products|escapejs }}'),
+        topSellers1: JSON.parse('{{ period1_top_sellers|escapejs }}'),
+        topSellers2: JSON.parse('{{ period2_top_sellers|escapejs }}'),
+        expenses1: JSON.parse('{{ period1_expenses|escapejs }}'),
+        expenses2: JSON.parse('{{ period2_expenses|escapejs }}'),
+        salesTrend1: JSON.parse('{{ salesTrend1|escapejs }}'),
+        salesTrend2: JSON.parse('{{ salesTrend2|escapejs }}')
+    };
+
+    // Form validation
+    document.getElementById('periodComparisonForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const period1Start = document.getElementById('period1Start').value;
+        const period1End = document.getElementById('period1End').value;
+        const period2Start = document.getElementById('period2Start').value;
+        const period2End = document.getElementById('period2End').value;
+
+        if (!period1Start || !period1End || !period2Start || !period2End) {
+            alert('Please select all dates');
+            return;
+        }
+
+        if (new Date(period1End) < new Date(period1Start) ||
+            new Date(period2End) < new Date(period2Start)) {
+            alert('End date must be after start date for each period');
+            return;
+        }
+
+        this.submit();
     });
 
-    // Parse JSON data
-    const topProducts = JSON.parse('{{ top_products|safe }}');
-    const topSellers = JSON.parse('{{ top_sellers|safe }}');
-    const purchasesBySupplier = JSON.parse('{{ purchases_by_supplier|safe }}');
-    const miscExpenses = JSON.parse('{{ misc_expenses|safe }}');
+    // Helper function for chart creation
+    function createChart(ctx, type, data, options) {
+        try {
+            return new Chart(ctx, {
+                type: type,
+                data: data,
+                options: options
+            });
+        } catch (error) {
+            console.error('Error creating chart:', error);
+        }
+    }
 
     // Top Products Chart
-    new Chart(document.getElementById("topProductsChart").getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: topProducts.map(item => item.name),
-            datasets: [{
-                label: 'Sales Amount',
-                data: topProducts.map(item => item.total_sales),
-                backgroundColor: 'rgba(78, 115, 223, 0.8)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        callback: value => '₵' + value
-                    }
-                }]
-            }
-        }
-    });
+    const productLabels = [...new Set([
+        ...chartData.topProducts1.map(item => item.product__product_name),
+        ...chartData.topProducts2.map(item => item.product__product_name)
+    ])];
 
-    // Top Sellers Chart
-    new Chart(document.getElementById("topSellersChart").getContext('2d'), {
-        type: 'horizontalBar',
-        data: {
-            labels: topSellers.map(item => item.name),
+    const topProductsCtx = document.getElementById('topProductsChart');
+    if (topProductsCtx) {
+        createChart(topProductsCtx.getContext('2d'), 'bar', {
+            labels: productLabels,
             datasets: [{
-                label: 'Sales Amount',
-                data: topSellers.map(item => item.total_sales),
+                label: 'Period 1',
+                data: productLabels.map(label => {
+                    const product = chartData.topProducts1.find(p => p.product__product_name === label);
+                    return product ? product.total_sales : 0;
+                }),
+                backgroundColor: 'rgba(78, 115, 223, 0.8)'
+            }, {
+                label: 'Period 2',
+                data: productLabels.map(label => {
+                    const product = chartData.topProducts2.find(p => p.product__product_name === label);
+                    return product ? product.total_sales : 0;
+                }),
                 backgroundColor: 'rgba(28, 200, 138, 0.8)'
             }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                xAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        callback: value => '₵' + value
-                    }
-                }]
-            }
-        }
-    });
-
-    // Purchases by Supplier Chart
-    new Chart(document.getElementById("purchasesBySupplierChart").getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: purchasesBySupplier.map(item => item.supplier),
-            datasets: [{
-                label: 'Purchase Amount',
-                data: purchasesBySupplier.map(item => item.total_amount),
-                backgroundColor: 'rgba(54, 185, 204, 0.8)'
-            }]
-        },
-        options: {
+        }, {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 yAxes: [{
                     ticks: {
                         beginAtZero: true,
-                        callback: value => '₵' + value
+                        callback: value => '₵' + value.toLocaleString()
                     }
                 }]
             }
-        }
-    });
+        });
+    }
 
-    // Miscellaneous Expenses Chart
-    new Chart(document.getElementById("miscExpensesChart").getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: miscExpenses.map(item => item.type),
+    // Top Sellers Chart
+    const sellerLabels = [...new Set([
+        ...chartData.topSellers1.map(item => `${item.user__first_name} ${item.user__last_name}`),
+        ...chartData.topSellers2.map(item => `${item.user__first_name} ${item.user__last_name}`)
+    ])];
+
+    const topSellersCtx = document.getElementById('topSellersChart');
+    if (topSellersCtx) {
+        createChart(topSellersCtx.getContext('2d'), 'bar', {
+            labels: sellerLabels,
             datasets: [{
-                data: miscExpenses.map(item => item.amount),
+                label: 'Period 1',
+                data: sellerLabels.map(label => {
+                    const seller = chartData.topSellers1.find(s =>
+                        `${s.user__first_name} ${s.user__last_name}` === label
+                    );
+                    return seller ? seller.total_sales : 0;
+                }),
+                backgroundColor: 'rgba(78, 115, 223, 0.8)'
+            }, {
+                label: 'Period 2',
+                data: sellerLabels.map(label => {
+                    const seller = chartData.topSellers2.find(s =>
+                        `${s.user__first_name} ${s.user__last_name}` === label
+                    );
+                    return seller ? seller.total_sales : 0;
+                }),
+                backgroundColor: 'rgba(28, 200, 138, 0.8)'
+            }]
+        }, {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        callback: value => '₵' + value.toLocaleString()
+                    }
+                }]
+            }
+        });
+    }
+
+    // Expenses Chart
+    const expensesCtx = document.getElementById('expensesChart');
+    if (expensesCtx) {
+        createChart(expensesCtx.getContext('2d'), 'doughnut', {
+            labels: chartData.expenses1.map(item => item.type),
+            datasets: [{
+                data: chartData.expenses1.map(item => item.total_amount),
                 backgroundColor: [
                     'rgba(78, 115, 223, 0.8)',
                     'rgba(28, 200, 138, 0.8)',
                     'rgba(246, 194, 62, 0.8)',
-                    'rgba(231, 74, 59, 0.8)'
+                    'rgba(231, 74, 59, 0.8)',
+                    'rgba(54, 185, 204, 0.8)'
                 ]
             }]
-        },
-        options: {
+        }, {
             responsive: true,
             maintainAspectRatio: false,
             tooltips: {
                 callbacks: {
                     label: (tooltipItem, data) => {
                         const value = data.datasets[0].data[tooltipItem.index];
-                        return `₵${value.toFixed(2)}`;
+                        return '₵' + value.toLocaleString();
                     }
                 }
             }
-        }
-    });
+        });
+    }
+
+    // Sales Trend Chart
+    const salesTrendCtx = document.getElementById('salesComparisonChart');
+    if (salesTrendCtx) {
+        createChart(salesTrendCtx.getContext('2d'), 'line', {
+            labels: chartData.salesTrend1.map(item => item.date),
+            datasets: [{
+                label: 'Period 1',
+                data: chartData.salesTrend1.map(item => item.total_sales),
+                borderColor: 'rgba(78, 115, 223, 1)',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#ffffff',
+                pointHoverRadius: 5,
+                fill: true
+            }, {
+                label: 'Period 2',
+                data: chartData.salesTrend2.map(item => item.total_sales),
+                borderColor: 'rgba(28, 200, 138, 1)',
+                backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                pointBorderColor: '#ffffff',
+                pointHoverRadius: 5,
+                fill: true
+            }]
+        }, {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        callback: value => '₵' + value.toLocaleString()
+                    }
+                }]
+            },
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                intersect: false,
+                mode: 'index',
+                caretPadding: 10,
+                callbacks: {
+                    label: function(tooltipItem, chart) {
+                        return chart.datasets[tooltipItem.datasetIndex].label + ': ₵' +
+                               tooltipItem.yLabel.toLocaleString();
+                    }
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock javascripts %}

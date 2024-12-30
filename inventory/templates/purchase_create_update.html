@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" id="purchaseForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.supplier.id_for_label }}" class="form-label">
+                                    Supplier *
+                                </label>
+                                {{ form.supplier }}
+                                {% if form.supplier.errors %}
+                                    {% for error in form.supplier.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.supplier_product.id_for_label }}" class="form-label">
+                                    Supplier Product *
+                                </label>
+                                {{ form.supplier_product }}
+                                {% if form.supplier_product.errors %}
+                                    {% for error in form.supplier_product.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                                <small class="text-muted" id="available-stock"></small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.category_name.id_for_label }}" class="form-label">
+                                    Category *
+                                </label>
+                                {{ form.category_name }}
+                                {% if form.category_name.errors %}
+                                    {% for error in form.category_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.quantity.id_for_label }}" class="form-label">
+                                    Quantity *
+                                </label>
+                                {{ form.quantity }}
+                                {% if form.quantity.errors %}
+                                    {% for error in form.quantity.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.price_per_unit.id_for_label }}" class="form-label">
+                                    Price Per Unit *
+                                </label>
+                                {{ form.price_per_unit }}
+                                {% if form.price_per_unit.errors %}
+                                    {% for error in form.price_per_unit.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Amount</label>
+                                <input type="text" class="form-control" id="total_amount" readonly>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'inventory:purchase_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">{{ title }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function() {
+        const supplierSelect = $('#id_supplier');
+        const supplierProductSelect = $('#id_supplier_product');
+        const categoryInput = $('#id_category_name');
+        const quantityInput = $('#id_quantity');
+        const priceInput = $('#id_price_per_unit');
+        const totalAmountInput = $('#total_amount');
+        const availableStockSpan = $('#available-stock');
+
+        // Function to update total amount
+        function updateTotalAmount() {
+            const quantity = parseFloat(quantityInput.val()) || 0;
+            const price = parseFloat(priceInput.val()) || 0;
+            const total = (quantity * price).toFixed(2);
+            totalAmountInput.val(total);
+        }
+
+        // Function to load supplier products
+        function loadSupplierProducts(supplierId, selectedProductId = null) {
+            if (supplierId) {
+                $.ajax({
+                    url: `/inventory/supplier/${supplierId}/products/`,
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        supplierProductSelect.empty();
+                        supplierProductSelect.append(new Option('Select a product', ''));
+                        data.forEach(function(product) {
+                            const option = new Option(
+                                `${product.product_name}`,
+                                product.id
+                            );
+                            option.dataset.quantity = product.quantity;
+                            supplierProductSelect.append(option);
+                        });
+                        if (selectedProductId) {
+                            supplierProductSelect.val(selectedProductId);
+                            loadProductDetails(selectedProductId);
+                        }
+                    }
+                });
+            } else {
+                supplierProductSelect.empty();
+                supplierProductSelect.append(new Option('Select a product', ''));
+                availableStockSpan.text('');
+            }
+        }
+
+        // Function to load product details
+        function loadProductDetails(productId) {
+            if (productId) {
+                $.ajax({
+                    url: `/inventory/supplier-product/${productId}/`,
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(data) {
+                        categoryInput.val(data.category_name);
+                        priceInput.val(data.price);
+                        availableStockSpan.text(`Available Stock: ${data.quantity}`);
+                        updateTotalAmount();
+                    }
+                });
+            } else {
+                categoryInput.val('');
+                priceInput.val('');
+                availableStockSpan.text('');
+                updateTotalAmount();
+            }
+        }
+
+        // Event listeners
+        supplierSelect.change(function() {
+            loadSupplierProducts($(this).val());
+        });
+
+        supplierProductSelect.change(function() {
+            loadProductDetails($(this).val());
+        });
+
+        quantityInput.on('input', function() {
+            updateTotalAmount();
+            
+            // Validate quantity against available stock
+            const selectedOption = supplierProductSelect.find('option:selected');
+            const availableStock = selectedOption.data('quantity');
+            const requestedQuantity = parseInt($(this).val()) || 0;
+            
+            if (requestedQuantity > availableStock) {
+                $(this).addClass('is-invalid');
+                if (!$(this).next('.invalid-feedback').length) {
+                    $(this).after(`<div class="invalid-feedback d-block">Quantity cannot exceed available stock (${availableStock})</div>`);
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
+            }
+        });
+
+        priceInput.on('input', updateTotalAmount);
+
+        // Initialize form for edit
+        {% if form.instance.pk %}
+            loadSupplierProducts(
+                '{{ form.instance.supplier.id }}',
+                '{{ form.instance.supplier_product.id }}'
+            );
+        {% endif %}
+
+        // Form validation
+        $('#purchaseForm').submit(function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            $(this).find('select[required], input[required]').each(function() {
+                if (!$(this).val()) {
+                    isValid = false;
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Check quantity validation
+            const selectedOption = supplierProductSelect.find('option:selected');
+            const availableStock = selectedOption.data('quantity');
+            const requestedQuantity = parseInt(quantityInput.val()) || 0;
+            
+            if (requestedQuantity > availableStock) {
+                isValid = false;
+            }
+
+            if (!isValid) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: 'Please correct the errors in the form!'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Processing...',
+                html: 'Please wait while we process your request',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            this.submit();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-<!-- Page title  -->
+
 {% block title %}Categories{% endblock title %}
 
-<!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <style>
     .card-header .row {
         align-items: center;
@@ -21,12 +20,10 @@
 </style>
 {% endblock stylesheets %}
 
-<!-- Page content  -->
 {% block content %}
-
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'inventory:category_create' %}" class="btn btn-dark">
+        <a href="{% url 'inventory:category_create_update' %}" class="btn btn-dark">
             + Create Category
         </a>
     </div>
@@ -62,7 +59,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <a href="{% url 'inventory:category_update' category.id %}" class="btn btn-warning btn-sm" title="Update">
+                                <a href="{% url 'inventory:category_create_update' category.id %}" class="btn btn-warning btn-sm" title="Update">
                                     <i class="fas fa-pen"></i>
                                 </a>
                                 <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal-{{ category.id }}" title="Delete">
@@ -100,7 +97,6 @@
 </div>
 {% endblock content %}
 
-<!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
@@ -226,7 +222,7 @@ $('#dataTable tbody')
     var tr = tblCategories.cell($(this).closest('td, li')).index();
     row_data = ( tblCategories.row(tr.row).data());
     category_id = row_data[0];
-    category_name = row_data[2]
+    category_name = row_data[2];
     new_delete_url  = 'delete/' + category_id;
     document.getElementById("updateThisText").innerHTML = "Are you sure you want to delete the category:  " + category_name + "?";
     document.getElementById("updateThisURL").href=new_delete_url;

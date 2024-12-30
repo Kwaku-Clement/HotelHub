@@ -1,370 +1,337 @@
-import json
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Category, Product, Supplier, Purchase, SupplierProduct
-from .forms import  SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
-from django.db import transaction
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from .models import Category, Product, Supplier,  Purchase, SupplierProduct
+from .forms import MiscellaneousForm, SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
+from .utils import save_form_with_transaction, handle_error, handle_success, delete_instance_with_error_handling
 import logging
-from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Category, Product, Supplier, Purchase
+from .forms import SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
+from django.forms import ValidationError, modelformset_factory
+from django.db import transaction, IntegrityError
+from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+
 
 logger = logging.getLogger(__name__)
-
-@login_required(login_url="/authentication/login/")
-def categories_list_view(request):
-    context = {
-        "active_icon": "products_categories",
-        "categories": Category.objects.all()
-    }
-    return render(request, "category_list.html", context=context)
-
-@login_required(login_url="/authentication/login/")
-def categories_add_view(request):
-    context = {
-        "active_icon": "products_categories",
-        "category_status": Category.STATUS_CHOICES,
-    }
-
-    if request.method == 'POST':
-        form = CategoryForm(request.POST)
-        if form.is_valid():
-            try:
-                attributes = {
-                    "name": form.cleaned_data['name'],
-                    "status": request.POST.get('state', 'ACTIVE'),
-                    "description": form.cleaned_data['description'],
-                }
-
-                if Category.objects.filter(**attributes).exists():
-                    messages.error(request, 'Category already exists!', extra_tags="warning")
-                    return redirect('inventory:category_create')
-
-                new_category = Category.objects.create(**attributes)
-                messages.success(
-                    request,
-                    f"Category '{attributes['name']}' created successfully!",
-                    extra_tags="success"
-                )
-                return redirect('inventory:category_list')
-
-            except Exception as e:
-                messages.error(request, 'There was an error during the creation!', extra_tags="danger")
-                logger.error(e)
-                return redirect('inventory:category_create')
-        else:
-            messages.error(request, 'Invalid form submission!', extra_tags="danger")
-
-    else:
-        form = CategoryForm()
-
-    context["form"] = form
-    return render(request, "category_create.html", context=context)
-
-@login_required(login_url="/authentication/login/")
-def categories_update_view(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-    except Exception as e:
-        messages.error(
-            request, 'There was an error trying to get the category!', extra_tags="danger")
-        logger.error(e)
-        return redirect('inventory:category_list')
-
-    context = {
-        "active_icon": "products_categories",
-        "category_status": Category.STATUS_CHOICES,
-        "category": category
-    }
-
-    if request.method == 'POST':
-        try:
-            data = request.POST
-
-            attributes = {
-                "name": data['name'],
-                "status": data['state'],
-                "description": data['description']
-            }
-
-            if Category.objects.filter(**attributes).exists():
-                messages.error(request, 'Category already exists!',
-                               extra_tags="warning")
-                return redirect('inventory:category_create')
-
-            category = Category.objects.filter(
-                id=category_id).update(**attributes)
-
-            category = Category.objects.get(id=category_id)
-
-            messages.success(request, 'Category: ' + category.name +
-                             ' updated successfully!', extra_tags="success")
-            return redirect('inventory:category_list')
-        except Exception as e:
-            messages.error(
-                request, 'There was an error during the update!', extra_tags="danger")
-            logger.error(e)
-            return redirect('inventory:category_list')
-
-    return render(request, "category_update.html", context=context)
-
-@login_required(login_url="/authentication/login/")
-def categories_delete_view(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        category.delete()
-        messages.success(request, 'Category: ' + category.name +
-                         ' deleted!', extra_tags="success")
-        return redirect('inventory:category_list')
-    except Exception as e:
-        messages.error(
-            request, 'There was an error during the deletion!', extra_tags="danger")
-        logger.error(e)
-        return redirect('inventory:category_list')
-
-@login_required(login_url="/authentication/login/")
-def products_list_view(request):
-    context = {
-        "active_icon": "products",
-        "products": Product.objects.all()
-    }
-    return render(request, "product_list.html", context=context)
-
-@login_required(login_url="/authentication/login/")
-def products_add_view(request):
-    context = {
-        "active_icon": "products_categories",
-        "product_status": Product.STATUS_CHOICES,
-        "categories": Category.objects.filter(status="ACTIVE"),
-        "form": ProductForm()  # Add empty form to context for GET requests
-    }
-
-    if request.method == 'POST':
-        form = ProductForm(request.POST)
-        if form.is_valid():
-            product = form.save(commit=False)
-
-            # Check for duplicate products
-            if Product.objects.filter(
-                product_name=product.product_name,
-                category=product.category,
-                status=product.status,
-                price=product.price
-            ).exists():
-                messages.error(request, 'Product already exists!', extra_tags="warning")
-                context['form'] = form  # Add form back to context with data
-                return render(request, "product_create.html", context)
-
-            try:
-                product.save()
-                messages.success(request, f'Product: {product.product_name} created successfully!', extra_tags="success")
-                return redirect('inventory:product_list')
-            except Exception as e:
-                messages.error(request, f'Database error: {str(e)}', extra_tags="danger")
-                context['form'] = form
-                return render(request, "product_create.html", context)
-        else:
-            messages.error(request, 'Please correct the errors below.', extra_tags="danger")
-            context['form'] = form
-            return render(request, "product_create.html", context)
-
-    return render(request, "product_create.html", context=context)
-
-
-@login_required(login_url="/authentication/login/")
-def products_update_view(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-    except Product.DoesNotExist:
-        messages.error(request, 'There was an error trying to get the product!', extra_tags="danger")
-        return redirect('inventory:product_list')
-
-    context = {
-        "active_icon": "products",
-        "product_status": Product.STATUS_CHOICES,
-        "product": product,
-        "categories": Category.objects.all()
-    }
-
-    if request.method == 'POST':
-        form = ProductForm(request.POST, instance=product)
-        if form.is_valid():
-            product = form.save(commit=False)
-            if Product.objects.filter(
-                product_name=product.product_name,
-                category=product.category,
-                status=product.status,
-                price=product.price
-            ).exclude(id=product_id).exists():
-                messages.error(request, 'Product already exists!', extra_tags="warning")
-                return redirect('inventory:product_update', product_id=product_id)
-
-            product.save()
-            messages.success(request, f'Product: {product.product_name} updated successfully!', extra_tags="success")
-            return redirect('inventory:product_list')
-        else:
-            messages.error(request, 'There was an error during the update!', extra_tags="danger")
-            return redirect('inventory:product_update', product_id=product_id)
-
-    return render(request, "product_update.html", context=context)
-
-@login_required(login_url="/authentication/login/")
-def products_delete_view(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        product.delete()
-        messages.success(request, f'Product: {product.product_name} deleted!', extra_tags="success")
-        return redirect('inventory:product_list')
-    except Product.DoesNotExist:
-        messages.error(request, 'There was an error during the deletion!', extra_tags="danger")
-        return redirect('inventory:product_list')
-
-
-def is_ajax(request):
-    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
-
-@login_required(login_url="/authentication/login/")
-def get_products_ajax_view(request):
-    if request.method == 'POST':
-        if is_ajax(request=request):
-            data = []
-
-            products = Product.objects.filter(
-                product_name__icontains=request.POST['term'])
-            for product in products[0:10]:
-                item = product.to_json()
-                data.append(item)
-
-            return JsonResponse(data, safe=False)
 
 @login_required(login_url="/authentication/login/")
 def home_view(request):
     return render(request, 'home.html')
 
+@login_required(login_url="/authentication/login/")
+def categories_list_view(request):
+    try:
+        categories = Category.objects.all()
+        return render(request, "category_list.html", {"categories": categories})
+    except Exception as e:
+        handle_error(request, f"Error loading categories: {str(e)}")
+        return redirect('inventory:category_create_update')
+
+@login_required(login_url="/authentication/login/")
+def category_create_update(request, category_id=None):
+    if category_id:
+        category = get_object_or_404(Category, id=category_id)
+        title = "Update Category"
+    else:
+        category = None
+        title = "Create Category"
+
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category, error = save_form_with_transaction(form)
+            if error:
+                handle_error(request, error)
+                return redirect('inventory:category_create_update', category_id=category.id if category else None)
+            
+            handle_success(request, f"Category '{category.name}' saved successfully!")
+            return redirect('inventory:category_list')
+        else:
+            handle_error(request, 'Invalid form submission!')
+
+    else:
+        form = CategoryForm(instance=category)
+
+    context = {
+        "active_icon": "products_categories",
+        "category_status": Category.STATUS_CHOICES,
+        "form": form,
+        "title": title
+    }
+    return render(request, "category_create_update.html", context=context)
+
+@login_required(login_url="/authentication/login/")
+def categories_delete_view(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    delete_instance_with_error_handling(
+        request, 
+        category, 
+        success_message=f'Category: {category.name} deleted!', 
+        failure_message='Error deleting category'
+    )
+    return redirect('inventory:category_list')
+
+@login_required(login_url="/authentication/login/")
+def products_list_view(request):
+    try:
+        products = Product.objects.all()
+        return render(request, "product_list.html", {"products": products})
+    except Exception as e:
+        handle_error(request, f"Error loading products: {str(e)}")
+        return redirect('inventory:product_create_update')
+
+@login_required(login_url="/authentication/login/")
+def product_create_update(request, product_id=None):
+    if product_id:
+        product = get_object_or_404(Product, id=product_id)
+        title = "Update Product"
+    else:
+        product = None
+        title = "Create Product"
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            product, error = save_form_with_transaction(form)
+            if error:
+                handle_error(request, error)
+                return redirect('inventory:product_create_update', product_id=product.id if product else None)
+
+            handle_success(request, f'Product: {product.product_name} saved successfully!')
+            return redirect('inventory:product_list')
+        else:
+            handle_error(request, 'Invalid form submission!')
+
+    else:
+        form = ProductForm(instance=product)
+
+    context = {
+        "active_icon": "products",
+        "product_status": Product.STATUS_CHOICES,
+        "categories": Category.objects.filter(status="ACTIVE"),
+        "form": form,
+        "title": title
+    }
+    return render(request, "product_create_update.html", context=context)
+
+@login_required(login_url="/authentication/login/")
+def products_delete_view(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    delete_instance_with_error_handling(
+        request, 
+        product, 
+        success_message=f'Product: {product.product_name} deleted!', 
+        failure_message='Error deleting product'
+    )
+    return redirect('inventory:product_list')
 
 @login_required(login_url="/authentication/login/")
 def supplier_list(request):
-    # Get all suppliers and their associated products
-    suppliers = Supplier.objects.prefetch_related('products')
+    try:
+        suppliers = Supplier.objects.all()
+        return render(request, "supplier_list.html", {"suppliers": suppliers})
+    except Exception as e:
+        handle_error(request, f"Error loading suppliers: {str(e)}")
+        return redirect('inventory:supplier_create_update')
 
-    return render(request, 'supplier_list.html', {'suppliers': suppliers})
-
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db import transaction
+from django.forms import modelformset_factory
+from .models import Supplier, SupplierProduct
+from .forms import SupplierForm, SupplierProductForm
+from .utils import handle_success, handle_error
 
 @login_required(login_url="/authentication/login/")
-def supplier_create(request):
-    supplier_form = SupplierForm(request.POST or None)
-    product_form = SupplierProductForm(request.POST or None)
-    
+def supplier_create_update(request, pk=None):
+    SupplierProductFormSet = modelformset_factory(
+        SupplierProduct, 
+        form=SupplierProductForm, 
+        extra=1, 
+        can_delete=True
+    )
+
+    if pk:
+        supplier = get_object_or_404(Supplier, pk=pk)
+        supplier_products = supplier.supplier_products.all()
+        title = "Update Supplier"
+    else:
+        supplier = None
+        supplier_products = SupplierProduct.objects.none()
+        title = "Create Supplier"
+
     if request.method == 'POST':
-        if supplier_form.is_valid() and product_form.is_valid():
+        supplier_form = SupplierForm(request.POST, instance=supplier)
+        product_formset = SupplierProductFormSet(request.POST)
+
+        if supplier_form.is_valid() and product_formset.is_valid():
             try:
                 with transaction.atomic():
-                    # Save the supplier first
-                    supplier = supplier_form.save()
-                    
-                    # Assign the supplier to the product and save
-                    product = product_form.save(commit=False)
-                    product.supplier = supplier
-                    product.save()
-                    
-                    messages.success(request, 'Supplier and product created successfully.')
-                    return redirect('inventory:supplier_list')
+                    supplier_name = supplier_form.cleaned_data['supplier_name']
+                    contact_info = supplier_form.cleaned_data['contact_info']
+
+                    # Look for existing supplier
+                    existing_supplier = Supplier.objects.filter(
+                        supplier_name=supplier_name,
+                        contact_info=contact_info
+                    ).first()
+
+                    if existing_supplier and not pk:
+                        supplier = existing_supplier
+                    else:
+                        supplier = supplier_form.save()
+
+                    for product_form in product_formset:
+                        if product_form.cleaned_data:
+                            product_name = product_form.cleaned_data.get('product_name')
+                            price = product_form.cleaned_data.get('price')
+                            quantity = product_form.cleaned_data.get('quantity')
+                            category_name = product_form.cleaned_data.get('category_name')
+                            delete = product_form.cleaned_data.get('DELETE', False)
+
+                            existing_product = SupplierProduct.objects.filter(
+                                supplier=supplier,
+                                product_name=product_name,
+                                category_name=category_name
+                            ).first()
+
+                            if delete and existing_product:
+                                existing_product.delete()
+                            elif existing_product:
+                                # Update existing product details and stock
+                                existing_product.quantity += quantity
+                                existing_product.price = price
+                                existing_product.save()
+                            elif not delete:
+                                # Create new product
+                                product = product_form.save(commit=False)
+                                product.supplier = supplier
+                                product.save()
+
+                handle_success(request, f'Supplier {supplier.supplier_name} and products updated successfully.')
+                return redirect('inventory:supplier_list')
+
             except Exception as e:
-                messages.error(request, f'Error creating supplier: {str(e)}')
+                handle_error(request, f'Error saving supplier: {str(e)}')
+                return redirect('inventory:supplier_create_update', pk=pk)
         else:
-            messages.error(request, 'Please correct the errors below.')
-    
-    context = {
+            handle_error(request, 'Please correct the form errors.')
+            print(supplier_form.errors)
+            print(product_formset.errors)
+    else:
+        supplier_form = SupplierForm(instance=supplier)
+        product_formset = SupplierProductFormSet(queryset=supplier_products)
+
+    return render(request, 'supplier_create_update.html', {
         'supplier_form': supplier_form,
-        'product_form': product_form,
-    }
+        'product_formset': product_formset,
+        'title': title
+    })
     
-    return render(request, 'supplier_create.html', context)
-
-@login_required(login_url="/authentication/login/")
-def supplier_update(request, pk):
-    supplier = get_object_or_404(Supplier, pk=pk)
-    form = SupplierForm(request.POST or None, instance=supplier)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Supplier updated successfully.')
-        return redirect('inventory:supplier_list')
-    return render(request, 'supplier_update.html', {'form': form})
-
-@login_required(login_url="/authentication/login/")
 def supplier_delete(request, pk):
     supplier = get_object_or_404(Supplier, pk=pk)
-    if request.method == 'POST':
-        supplier.delete()
-        messages.success(request, 'Supplier deleted successfully.')
+    
+    if supplier.supplier_products.exists() or supplier.purchases.exists():
+        handle_error(request, "Cannot delete supplier because it has associated products or purchases.")
         return redirect('inventory:supplier_list')
-    return render(request, 'supplier_delete.html', {'supplier': supplier})
 
+    supplier.delete()
+    return redirect('inventory:supplier_list')
 
 @login_required(login_url="/authentication/login/")
 def purchase_list(request):
-    purchases = Purchase.objects.select_related('supplier', 'product').all()
-    return render(request, 'purchase_list.html', {'purchases': purchases})  # Fixed typo in 'purchures'
+    try:
+        purchases = Purchase.objects.all()
+        return render(request, "purchase_list.html", {"purchases": purchases})
+    except Exception as e:
+        handle_error(request, f"Error loading purchases: {str(e)}")
+        return redirect('inventory:purchase_create_update')
+
 
 @login_required(login_url="/authentication/login/")
-def purchase_update(request, pk):
-    purchase = get_object_or_404(Purchase, pk=pk)
-    form = PurchaseForm(request.POST or None, instance=purchase)
-    if request.method == 'POST' and form.is_valid():
-        purchase = form.save(commit=False)
-        purchase.total = purchase.quantity * purchase.price  # Updated to use 'price'
-        purchase.save()
-        messages.success(request, 'Purchase updated successfully.')
-        return redirect('inventory:purchase_list')
-    return render(request, 'purchase_update.html', {'form': form})
+def purchase_create_update(request, pk=None):
+    if pk:
+        purchase = get_object_or_404(Purchase, pk=pk)
+        title = "Update Purchase"
+    else:
+        purchase = None
+        title = "Create Purchase"
+
+    if request.method == 'POST':
+        form = PurchaseForm(request.POST, instance=purchase)
+        if form.is_valid():
+            try:
+                purchase = form.save()
+                messages.success(request, 'Purchase saved successfully.')
+                return redirect('inventory:purchase_list')
+            except ValidationError as e:
+                messages.error(request, str(e))
+        else:
+            print(form.errors)  # Debug form errors
+            messages.error(request, 'Please correct the form errors.')
+    else:
+        form = PurchaseForm(instance=purchase)
+
+    return render(request, 'purchase_create_update.html', {
+        'form': form,
+        'title': title
+    })
 
 @login_required(login_url="/authentication/login/")
 def purchase_delete(request, pk):
     purchase = get_object_or_404(Purchase, pk=pk)
-    if request.method == 'POST':
-        purchase.delete()
-        messages.success(request, 'Purchase deleted successfully.')
-        return redirect('inventory:purchase_list')
-    return render(request, 'purchase_delete.html', {'purchase': purchase})
-
-login_required(login_url="/authentication/login/")
-def purchase_create(request):
-    if request.method == 'POST':
-        form = PurchaseForm(request.POST)
-        if form.is_valid():
-            purchase = form.save()
-            messages.success(request, 'Purchase created successfully.')
-            return redirect('inventory:purchase_list')
-    else:
-        form = PurchaseForm()
-    
-    return render(request, 'purchase_create.html', {
-        'form': form,
-        'title': 'Create Purchase'
-    })
+    delete_instance_with_error_handling(
+        request, 
+        purchase, 
+        success_message='Purchase deleted successfully.',
+        failure_message='Error deleting purchase'
+    )
+    return redirect('inventory:purchase_list')
 
 
 @login_required(login_url="/authentication/login/")
-@require_http_methods(["GET"])
-def get_supplier_products(request):
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == "GET":
-        supplier_id = request.GET.get('supplier')
-        if supplier_id:
-            try:
-                supplier_products = SupplierProduct.objects.filter(supplier_id=supplier_id)
-                products_data = [
-                    {
-                        'id': product.id,
-                        'product_name': product.product_name,
-                        'price': product.price,
-                        'quantity': product.quantity
-                    }
-                    for product in supplier_products
-                ]
-                return JsonResponse({'products': products_data})
-            except SupplierProduct.DoesNotExist:
-                return JsonResponse({'error': 'No products found for the selected supplier.'})
-        else:
-            return JsonResponse({'error': 'Supplier ID is missing.'})
+def get_supplier_products(request, supplier_id):
+    # Check if request is AJAX
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    products = SupplierProduct.objects.filter(supplier_id=supplier_id)
+    data = [{
+        'id': product.id,
+        'product_name': product.product_name,
+        'price': str(product.price),
+        'quantity': product.quantity
+    } for product in products]
+    
+    return JsonResponse(data, safe=False)
+
+@login_required(login_url="/authentication/login/")
+def get_supplier_product_details(request, product_id):
+    # Check if request is AJAX
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    try:
+        product = SupplierProduct.objects.get(id=product_id)
+        data = {
+            'id': product.id,
+            'product_name': product.product_name,
+            'category_name': product.category_name,
+            'price': str(product.price),
+            'quantity': product.quantity
+        }
+        return JsonResponse(data)
+    except SupplierProduct.DoesNotExist:
+        return JsonResponse({'error': 'Product not found'}, status=404)
+    
+
+def add_miscellaneous(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        form = MiscellaneousForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('select_report')
     else:
-        return JsonResponse({'error': 'Invalid request.'})
+        form = MiscellaneousForm()
+
+    return render(request, 'add_miscellaneous.html', {'form': form})

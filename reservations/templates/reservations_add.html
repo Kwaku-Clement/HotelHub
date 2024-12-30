@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "base.html" %} {% load static %}
 
 <!-- Page title  -->
 {% block title %}Add reservation{% endblock title %}
@@ -28,7 +27,7 @@
 <!-- Custom CSS -->
 <style>
   body {
-    font-family: 'Arial', sans-serif;
+    font-family: "Arial", sans-serif;
     background-color: #f8f9fa;
   }
   .reservation-container {
@@ -36,7 +35,8 @@
     justify-content: space-between;
     gap: 20px;
   }
-  .reservation-left, .reservation-right {
+  .reservation-left,
+  .reservation-right {
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -103,7 +103,8 @@
   .table th {
     background-color: #f1f1f1;
   }
-  .table td, .table th {
+  .table td,
+  .table th {
     vertical-align: middle;
   }
   .table-hover tbody tr:hover {
@@ -168,7 +169,11 @@
                   </div>
                   <!-- Rooms table -->
                   <div class="card-body table-responsive p-0">
-                    <table class="table table-hover text-nowrap" id="table_rooms" style="width:100%;">
+                    <table
+                      class="table table-hover text-nowrap"
+                      id="table_rooms"
+                      style="width: 100%"
+                    >
                       <thead class="thead-light">
                         <tr>
                           <th>ID</th>
@@ -203,7 +208,9 @@
                         Select the guest
                       </option>
                       {% for guest in guests %}
-                      <option value="{{ guest.value }}">{{ guest.label }}</option>
+                      <option value="{{ guest.value }}">
+                        {{ guest.label }}
+                      </option>
                       {% endfor %}
                     </select>
                   </div>
@@ -239,10 +246,17 @@
                   <div class="form-group">
                     <label>Amount payed</label>
                     <div class="input-group">
-                      <input name="amount_payed" class="form-control" required />
+                      <input
+                        name="amount_payed"
+                        class="form-control"
+                        required
+                      />
                     </div>
                   </div>
-                  <button type="submit" class="btn btn-success font-weight-bold">
+                  <button
+                    type="submit"
+                    class="btn btn-success font-weight-bold"
+                  >
                     Create reservation
                   </button>
                 </div>
@@ -262,79 +276,81 @@
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 <!-- Select2 -->
-<script
-  src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
-  defer
-></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
 <!-- Bootstrap Touchspin -->
 <script src="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.js' %}"></script>
 <!-- Sweet Alert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.6.15/dist/sweetalert2.all.min.js"></script>
 
 <script>
-  // Round number to specified decimal places
-  function roundTo(n, digits) {
-    if (digits === undefined) {
-      digits = 0;
-    }
-
-    var multiplicator = Math.pow(10, digits);
-    n = parseFloat((n * multiplicator).toFixed(11));
-    return Math.round(n) / multiplicator;
+// Round number to specified decimal places
+function roundTo(n, digits) {
+  if (digits === undefined) {
+    digits = 0;
   }
 
-  // Variable for room number in table
-  var number = 1;
+  var multiplicator = Math.pow(10, digits);
+  n = parseFloat((n * multiplicator).toFixed(11));
+  return Math.round(n) / multiplicator;
+}
 
-  // Variable to store reservation details and rooms
-  var reservation = {
-    items: {
-      guest: 0,
-      sub_total: 0.0,
-      grand_total: 0.0,
-      tax_amount: 0.0,
-      tax_percentage: 0.0,
-      amount_payed: 0.0,
-      amount_change: 0.0,
-      check_in: "",
-      check_out: "",
-      rooms: [],
-    },
-    calculate_reservation: function () {
-      var sub_total = 0.0;
-      var tax_percentage =
-        parseFloat($('input[name="tax_percentage"]').val()) || 0;
-      $.each(this.items.rooms, function (pos, dict) {
-        dict.pos = pos;
-        dict.price = parseFloat(dict.price) || 0;
-        dict.days = parseInt(dict.days) || 1;
-        dict.total_room = roundTo(dict.days * dict.price, 2);
-        sub_total += dict.total_room;
-      });
-      this.items.sub_total = roundTo(sub_total, 2);
-      this.items.tax_amount = roundTo(
-        this.items.sub_total * (tax_percentage / 100),
-        2
-      );
-      this.items.grand_total = roundTo(
-        this.items.sub_total + this.items.tax_amount,
-        2
-      );
-      $('input[name="sub_total"]').val(this.items.sub_total);
-      $('input[name="tax_amount"]').val(this.items.tax_amount);
-      $('input[name="grand_total"]').val(this.items.grand_total);
-    },
-    add_room: function (item) {
-      item.days = 1;
-      item.price = parseFloat(item.price) || 0;
-      item.total_room = roundTo(item.days * item.price, 2);
-      this.items.rooms.push(item);
-      this.list_room();
-    },
-    list_room: function () {
-      this.calculate_reservation();
+// Calculate days between two dates
+function calculateDaysBetweenDates(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const timeDiff = Math.abs(end - start);
+  return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+}
+
+// Variable for room number in table
+var number = 1;
+
+// Variable to store reservation details and rooms
+var reservation = {
+  items: {
+    guest: 0,
+    sub_total: 0.0,
+    grand_total: 0.0,
+    tax_amount: 0.0,
+    tax_percentage: 0.0,
+    amount_payed: 0.0,
+    amount_change: 0.0,
+    check_in: "",
+    check_out: "",
+    rooms: [],
+  },
+  calculate_reservation: function () {
+    var sub_total = 0.0;
+    var tax_percentage = parseFloat($('input[name="tax_percentage"]').val()) || 0;
+    $.each(this.items.rooms, function (pos, dict) {
+      dict.pos = pos;
+      dict.price = parseFloat(dict.price) || 0;
+      dict.days = parseInt(dict.days) || 1;
+      dict.total_room = roundTo(dict.days * dict.price, 2);
+      sub_total += dict.total_room;
+    });
+    this.items.sub_total = roundTo(sub_total, 2);
+    this.items.tax_amount = roundTo(this.items.sub_total * (tax_percentage / 100), 2);
+    this.items.grand_total = roundTo(this.items.sub_total + this.items.tax_amount, 2);
+    $('input[name="sub_total"]').val(this.items.sub_total);
+    $('input[name="tax_amount"]').val(this.items.tax_amount);
+    $('input[name="grand_total"]').val(this.items.grand_total);
+  },
+  add_room: function (item) {
+    var check_in = $('#check_in').val();
+    var check_out = $('#check_out').val();
+    item.days = calculateDaysBetweenDates(check_in, check_out);
+    item.price = parseFloat(item.price) || 0;
+    item.total_room = roundTo(item.days * item.price, 2);
+    this.items.rooms.push(item);
+    this.list_room();
+  },
+  list_room: function () {
+    this.calculate_reservation();
+    if ($.fn.DataTable.isDataTable('#table_rooms')) {
+      $('#table_rooms').DataTable().clear().rows.add(this.items.rooms).draw();
+    } else {
       var tblRooms = $("#table_rooms").DataTable({
-        destroy: true,
         data: this.items.rooms,
         columns: [
           { data: "number" },
@@ -349,11 +365,7 @@
             class: "text-center",
             targets: [3],
             render: function (data, type, row) {
-              return (
-                '<input name="days" type="text" class="form-control form-control-xs text-center input-sm" autocomplete="off" value="' +
-                row.days +
-                '">'
-              );
+              return '<input name="days" type="text" class="form-control form-control-xs text-center input-sm" autocomplete="off" value="' + row.days + '" readonly>';
             },
           },
           {
@@ -372,256 +384,242 @@
             },
           },
         ],
-        rowCallback(row, data, displayNum, displayIndex, dataIndex) {
-          $(row).find("input[name='days']").TouchSpin({
-            min: 1,
-            max: 100,
-            step: 1,
-            decimals: 0,
-            boostat: 1,
-            maxboostedstep: 3,
-            postfix: "",
-          });
-        },
         paging: false,
         searching: false,
         info: false,
       });
-      return tblRooms;
-    },
-  };
+    }
+  },
+};
 
-  $(document).ready(function () {
-    // Initialize tax percentage input
-    $("input[name='tax_percentage']").TouchSpin({
-      min: 0,
-      max: 100,
-      step: 1,
-      
-      decimals: 2,
-      boostat: 5,
-      maxboostedstep: 10,
-      postfix: "%"
-    }).on("change", function () {
-      reservation.calculate_reservation();
+$(document).ready(function () {
+  // Initialize tax percentage input
+  $("input[name='tax_percentage']").TouchSpin({
+    min: 0,
+    max: 100,
+    step: 1,
+    decimals: 2,
+    boostat: 5,
+    maxboostedstep: 10,
+    postfix: "%"
+  }).on("change", function () {
+    reservation.calculate_reservation();
+  });
+
+  // Initialize guest select box
+  $("#searchbox_guests").select2({
+    placeholder: "Select a guest",
+    allowClear: true
+  });
+
+  // Initialize room search box
+  $("#searchbox_rooms").select2({
+    delay: 250,
+    placeholder: "Search a room",
+    minimumInputLength: 1,
+    allowClear: true,
+    templateResult: template_room_searchbox,
+    ajax: {
+      url: "{% url 'rooms:get_rooms' %}",
+      type: "POST",
+      data: function (params) {
+        return {
+          term: params.term,
+          csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val(),
+          check_in: $("#check_in").val(),
+          check_out: $("#check_out").val()
+        };
+      },
+      processResults: function (data) {
+        return {
+          results: data.map(function (item) {
+            return {
+              id: item.id,
+              text: item.name,
+              name: item.name,
+              room_type: item.room_type,
+              price: item.price,
+              number: number
+            };
+          })
+        };
+      },
+      cache: true
+    }
+  }).on("select2:select", function (e) {
+    var data = e.params.data;
+    data.number = number++;
+    reservation.add_room(data);
+    $(this).val("").trigger("change.select2");
+  });
+
+  // Initialize rooms table
+  var tblRooms = reservation.list_room();
+
+  // Handle delete button click
+  $('#table_rooms tbody').on('click', '.delete-room', function(e) {
+    e.preventDefault();
+    var table = $('#table_rooms').DataTable();
+    var row = $(this).closest('tr');
+    var index = table.row(row).index();
+    var data = table.row(row).data();
+
+    if (data) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to delete room ${data.name}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          reservation.items.rooms.splice(index, 1);
+          tblRooms = reservation.list_room();
+          Swal.fire('Deleted!', 'Room has been deleted.', 'success');
+        }
+      });
+    }
+  });
+
+  // Set current date for check-in and check-out
+  var today = new Date();
+  var year = today.getFullYear();
+  var month = String(today.getMonth() + 1).padStart(2, '0');
+  var day = String(today.getDate()).padStart(2, '0');
+  var currentDate = year + '-' + month + '-' + day;
+
+  $('#check_in').val(currentDate);
+  $('#check_out').val(currentDate);
+
+  // Handle date change
+  $('#check_in, #check_out').on('change', function() {
+    var check_in = $('#check_in').val();
+    var check_out = $('#check_out').val();
+    var days = calculateDaysBetweenDates(check_in, check_out);
+
+    // Update the days for all rooms without removing them
+    $.each(reservation.items.rooms, function(index, room) {
+      room.days = days;
+      room.total_room = roundTo(days * room.price, 2);
     });
 
-    // Initialize guest select box
-    $("#searchbox_guests").select2({
-      placeholder: "Select a guest",
-      allowClear: true
-    });
+    reservation.calculate_reservation();
+    reservation.list_room(); // Redraw the table with updated data
+  });
 
-    // Initialize room search box
-    $("#searchbox_rooms").select2({
-      delay: 250,
-      placeholder: "Search a room",
-      minimumInputLength: 1,
-      allowClear: true,
-      templateResult: template_room_searchbox,
-      ajax: {
-        url: "{% url 'rooms:get_rooms' %}",
-        type: "POST",
-        data: function (params) {
-          return {
-            term: params.term,
-            csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val(),
-            check_in: $("#check_in").val(),
-            check_out: $("#check_out").val()
-          };
-        },
-        processResults: function (data) {
-          return {
-            results: data.map(function(item) {
-              return {
-                id: item.id,
-                text: item.name,
-                name: item.name,
-                room_type: item.room_type,
-                price: item.price,
-                number: number
-              };
-            })
-          };
-        },
-        cache: true
-      }
-    }).on("select2:select", function (e) {
-      var data = e.params.data;
-      data.number = number++;
-      data.price = parseFloat(data.price) || 0;
-      data.days = 1;
-      data.total_room = roundTo(data.price * data.days, 2);
-      reservation.add_room(data);
-      $(this).val("").trigger("change.select2");
-    });
+  // Form submission
+  $("form.reservationForm").on("submit", function (e) {
+    e.preventDefault();
 
-    // Initialize rooms table
-    var tblRooms = reservation.list_room();
+    var check_in = new Date($('input[name="check_in"]').val());
+    var check_out = new Date($('input[name="check_out"]').val());
+    var currentDate = new Date();
 
-    // Handle delete button click
-    $('#table_rooms tbody').on('click', '.delete-room', function(e) {
-      e.preventDefault();
-      var table = $('#table_rooms').DataTable();
-      var row = $(this).closest('tr');
-      var index = table.row(row).index();
-      var data = table.row(row).data();
-
-      if (data) {
-        Swal.fire({
-          title: 'Are you sure?',
-          text: `Do you want to delete room ${data.name}?`,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
-          confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            reservation.items.rooms.splice(index, 1);
-            tblRooms = reservation.list_room();
-            Swal.fire('Deleted!', 'Room has been deleted.', 'success');
-          }
-        });
-      }
-    });
-
-    // Handle days input change
-    $('#table_rooms tbody').on('change keyup', 'input[name="days"]', function() {
-      var table = $('#table_rooms').DataTable();
-      var row = $(this).closest('tr');
-      var rowData = table.row(row).data();
-      var days = parseInt($(this).val()) || 1;
-
-      if (rowData) {
-        var index = table.row(row).index();
-        reservation.items.rooms[index].days = days;
-        reservation.items.rooms[index].total_room = roundTo(days * rowData.price, 2);
-        reservation.calculate_reservation();
-        table.draw(false);
-      }
-    });
-
-    function template_room_searchbox(repo) {
-      if (repo.loading) {
-        return repo.text;
-      }
-
-      if (!repo.id) {
-        return repo.text;
-      }
-
-      return $('<div class="wrapper container">' +
-        '<div class="row">' +
-        '<div class="col-lg-11 text-left shadow-sm">' +
-        '<p style="margin-bottom: 5px;">' +
-        "<b>Name:</b> " + repo.name +
-        " | Room Type: " + "<span class='btn-info px-2'>" + repo.room_type + "</span> <br>" +
-        '<b>Price:</b> <span class="btn-success px-2">' + repo.price + " Ȼ. </span>" +
-        "</p>" +
-        "</div>" +
-        "</div>" +
-        "</div>");
+    if (check_in < currentDate || check_out < currentDate) {
+      Swal.fire({
+        title: "Selected date cannot be less than the current date",
+        icon: "warning"
+      });
+      return false;
     }
 
-    // Set current date for check-in and check-out
-    var today = new Date();
-    var year = today.getFullYear();
-    var month = String(today.getMonth() + 1).padStart(2, '0');
-    var day = String(today.getDate()).padStart(2, '0');
-    var currentDate = year + '-' + month + '-' + day;
+    if (reservation.items.rooms.length === 0) {
+      Swal.fire({
+        title: "The reservation must have at least 1 room",
+        text: "Search a room and add it to the reservation",
+        icon: "warning"
+      });
+      return false;
+    }
 
-    $('#check_in').val(currentDate);
-    $('#check_out').val(currentDate);
+    var amountPayed = parseFloat($('[name="amount_payed"]').val()) || 0;
+    var grandTotal = parseFloat($('[name="grand_total"]').val()) || 0;
 
-    // Form submission code remains the same...
-    $("form.reservationForm").on("submit", function (e) {
-      e.preventDefault();
+    if (amountPayed < grandTotal) {
+      Swal.fire({
+        title: "Payable Amount is lower than the Grand Total",
+        icon: "warning"
+      });
+      return false;
+    }
 
-      var check_in = new Date($('input[name="check_in"]').val());
-      var check_out = new Date($('input[name="check_out"]').val());
-      var currentDate = new Date();
+    var requestData = {
+      guest: $('select[name="guest"]').val(),
+      sub_total: $('input[name="sub_total"]').val(),
+      grand_total: $('input[name="grand_total"]').val(),
+      tax_amount: $('input[name="tax_amount"]').val(),
+      tax_percentage: $('input[name="tax_percentage"]').val(),
+      amount_payed: $('input[name="amount_payed"]').val(),
+      amount_change: roundTo(amountPayed - grandTotal, 2),
+      reservation_date: new Date().toISOString().split('T')[0],
+      check_in: $('input[name="check_in"]').val(),
+      check_out: $('input[name="check_out"]').val(),
+      rooms: reservation.items.rooms
+    };
 
-      if (check_in < currentDate || check_out < currentDate) {
-        Swal.fire({
-          title: "Selected date cannot be less than the current date",
-          icon: "warning"
-        });
-        return false;
-      }
-
-      if (reservation.items.rooms.length === 0) {
-        Swal.fire({
-          title: "The reservation must have at least 1 room",
-          text: "Search a room and add it to the reservation",
-          icon: "warning"
-        });
-        return false;
-      }
-
-      var amountPayed = parseFloat($('[name="amount_payed"]').val()) || 0;
-      var grandTotal = parseFloat($('[name="grand_total"]').val()) || 0;
-
-      if (amountPayed < grandTotal) {
-        Swal.fire({
-          title: "Payable Amount is lower than the Grand Total",
-          icon: "warning"
-        });
-        return false;
-      }
-
-      var requestData = {
-        guest: $('select[name="guest"]').val(),
-        sub_total: $('input[name="sub_total"]').val(),
-        grand_total: $('input[name="grand_total"]').val(),
-        tax_amount: $('input[name="tax_amount"]').val(),
-        tax_percentage: $('input[name="tax_percentage"]').val(),
-        amount_payed: $('input[name="amount_payed"]').val(),
-        amount_change: roundTo(amountPayed - grandTotal, 2),
-        reservation_date: new Date().toISOString().split('T')[0],
-        check_in: $('input[name="check_in"]').val(),
-        check_out: $('input[name="check_out"]').val(),
-        rooms: reservation.items.rooms
-      };
-
-      $.ajax({
-        url: window.location.pathname,
-        type: "POST",
-        data: JSON.stringify(requestData),
-        contentType: "application/json",
-        headers: {
-          "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val()
-        },
-        success: function (response) {
-          if (response.status === "success") {
-            Swal.fire({
-              title: "Reservation created successfully!",
-              icon: "success"
-            }).then(() => {
-              window.location.href = window.location.pathname.replace("add", "list");
-            });
-          } else {
-            Swal.fire({
-              title: "Error creating reservation",
-              text: response.message,
-              icon: "error"
-            });
-          }
-        },
-        error: function (xhr) {
-          let errorMessage = "An error occurred while creating the reservation.";
-          if (xhr.responseJSON && xhr.responseJSON.message) {
-            errorMessage = xhr.responseJSON.message;
-          }
+    $.ajax({
+      url: window.location.pathname,
+      type: "POST",
+      data: JSON.stringify(requestData),
+      contentType: "application/json",
+      headers: {
+        "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val()
+      },
+      success: function (response) {
+        if (response.status === "success") {
+          Swal.fire({
+            title: "Reservation created successfully!",
+            icon: "success"
+          }).then(() => {
+            window.location.href = window.location.pathname.replace("add", "list");
+          });
+        } else {
           Swal.fire({
             title: "Error creating reservation",
-            text: errorMessage,
+            text: response.message,
             icon: "error"
           });
         }
-      });
+      },
+      error: function (xhr) {
+        let errorMessage = "An error occurred while creating the reservation.";
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMessage = xhr.responseJSON.message;
+        }
+        Swal.fire({
+          title: "Error creating reservation",
+          text: errorMessage,
+          icon: "error"
+        });
+      }
     });
   });
+
+  function template_room_searchbox(repo) {
+    if (repo.loading) {
+      return repo.text;
+    }
+
+    if (!repo.id) {
+      return repo.text;
+    }
+
+    return $('<div class="wrapper container">' +
+      '<div class="row">' +
+      '<div class="col-lg-11 text-left shadow-sm">' +
+      '<p style="margin-bottom: 5px;">' +
+      "<b>Name:</b> " + repo.name +
+      " | Room Type: " + "<span class='btn-info px-2'>" + repo.room_type + "</span> <br>" +
+      '<b>Price:</b> <span class="btn-success px-2">' + repo.price + " Ȼ. </span>" +
+      "</p>" +
+      "</div>" +
+      "</div>" +
+      "</div>");
+  }
+});
 </script>
 
 {% endblock javascripts %}
+

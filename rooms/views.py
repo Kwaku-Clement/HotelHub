@@ -4,6 +4,10 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from .models import RoomType, Room
 
+
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+
 @login_required(login_url="/authentication/login/")
 def room_types_list_view(request):
     context = {
@@ -189,9 +193,6 @@ def rooms_delete_view(request, room_id):
         messages.error(request, 'There was an error during the deletion!', extra_tags="danger")
         print(e)
         return redirect('rooms:rooms_list')
-
-def is_ajax(request):
-    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 @login_required(login_url="/authentication/login/")
 def get_rooms_ajax_view(request):
