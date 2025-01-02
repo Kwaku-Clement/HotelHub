@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% comment %} {% extends "base.html" %}
 {% load static %}
 
 {% block title %}Reservations Report{% endblock title %}
@@ -118,12 +118,54 @@
                             </tr>
                         {% endif %}
                     </tbody>
-                    
                 </table>
             </div>
             <div class="mt-4">
                 <h5>Summary</h5>
                 <p><strong>Grand Total:</strong> {{ grand_total }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Display Miscellaneous Expenses -->
+    <div class="card shadow mb-4 mt-4">
+        <div class="card-header py-3">
+            <h4 class="mb-0">Miscellaneous Expenses</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="miscellaneousTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if miscellaneous_expenses %}
+                            {% for expense in miscellaneous_expenses %}
+                            <tr>
+                                <td>{{ expense.get_type_display }}</td>
+                                <td>{{ expense.description }}</td>
+                                <td>{{ expense.amount }}</td>
+                                <td>{{ expense.date|date:"d-m-Y" }}</td>
+                                <td>{{ expense.created_by.get_full_name if expense.created_by else 'Unknown' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="no-reservations">No miscellaneous expenses found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4">
+                <h5>Summary</h5>
+                <p><strong>Total Miscellaneous Expenses:</strong> {{ total_miscellaneous }}</p>
             </div>
         </div>
     </div>
@@ -135,15 +177,15 @@
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 <!-- Datatable buttons -->
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.html5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.3.3/js/buttons.print.min.js"></script>
+<script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <!-- Moment JS -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="{% static 'vendor/moment/moment.min.js' %}"></script>
 
 <script>
 $(document).ready(function() {
@@ -231,6 +273,91 @@ $(document).ready(function() {
             { targets: [-1], orderable: false }
         ]
     });
+
+    $('#miscellaneousTable').DataTable({
+        dom: 'Brt',
+        buttons: [
+            {
+                extend: 'print',
+                text: 'Print <i class="fas fa-file ml-2"></i>',
+                titleAttr: 'Print',
+                className: 'btn btn-info',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
+            },
+            {
+                extend: 'excelHtml5',
+                text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                titleAttr: 'Excel',
+                className: 'btn btn-success ml-2',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                titleAttr: 'PDF',
+                className: 'btn btn-danger ml-2',
+                download: 'open',
+                orientation: 'vertical',
+                pageSize: 'A4',
+                title: '*',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                },
+                customize: function(doc) {
+                    doc.styles = {
+                        header: {
+                            fontSize: 18,
+                            bold: true,
+                            alignment: 'center'
+                        },
+                        subheader: {
+                            fontSize: 11,
+                            bold: true
+                        },
+                        quote: {
+                            italics: true
+                        },
+                        small: {
+                            fontSize: 8
+                        },
+                        tableHeader: {
+                            bold: true,
+                            fontSize: 11,
+                            color: 'white',
+                            fillColor: '#2d4154',
+                            alignment: 'center'
+                        }
+                    };
+                    doc.content[1].table.widths = ['10%', '10%', '30%', '30%', '20%'];
+                    doc.content[1].margin = [0, 35, 0, 0];
+                    doc.content[1].layout = {};
+                    doc['footer'] = (function(page, pages) {
+                        return {
+                            columns: [
+                                {
+                                    alignment: 'left',
+                                    text: ['Creation date: ', { text: moment().format('MM-DD-YYYY (HH:mm:ss)') }]
+                                },
+                                {
+                                    alignment: 'right',
+                                    text: ['page ', { text: page.toString() }, ' de ', { text: pages.toString() }]
+                                }
+                            ],
+                            margin: 20
+                        }
+                    });
+                }
+            }
+        ],
+        columnDefs: [
+            { targets: [0], visible: false, searchable: false },
+            { targets: [-1], orderable: false }
+        ]
+    });
 });
 </script>
-{% endblock javascripts %}
+{% endblock javascripts %} {% endcomment %}

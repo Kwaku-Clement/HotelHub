@@ -1,13 +1,37 @@
 from django import forms
-from datetime import date, timedelta
+from django.utils import timezone
 
 class ReportSelectionForm(forms.Form):
-    REPORT_TYPE_CHOICES = [
-        ('financial', 'Financial Report'),
+    REPORT_CHOICES = [
+        ('store', 'Store Report'),
+        ('reservation', 'Reservation Report'),
     ]
 
-    report_type = forms.ChoiceField(choices=REPORT_TYPE_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
-    start_date = forms.DateField(initial=date.today() - timedelta(days=30), widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
-    end_date = forms.DateField(initial=date.today(), widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
-    start_date2 = forms.DateField(required=False, initial=date.today() - timedelta(days=60), widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
-    end_date2 = forms.DateField(required=False, initial=date.today() - timedelta(days=30), widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
+    report_type = forms.ChoiceField(
+        choices=REPORT_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    start_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'value': timezone.now().date().strftime('%Y-%m-%d')
+        })
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'value': timezone.now().date().strftime('%Y-%m-%d')
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError("End date should be greater than start date.")
+
+        return cleaned_data

@@ -165,14 +165,13 @@
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
-<!--Select2-->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-<!--Bootstrap Touchspin-->
+<!-- Select2 -->
+<script src="{%static 'assets/select2/select2.min.js' %}" defer></script>
+<!-- Bootstrap Touchspin -->
 <script src="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.js' %}"></script>
-<!--Sweet Alert-->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.6.15/dist/sweetalert2.all.min.js"></script>
-
-<script>
+<!-- Sweet Alert -->
+<script src="{% static 'assets/sweetalert2/sweetalert2.all.min.js' %}"></script>
+ript>
     // Source: https://stackoverflow.com/a/32605063
     function roundTo(n, digits) {
         if (digits === undefined) {

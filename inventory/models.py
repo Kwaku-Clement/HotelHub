@@ -193,8 +193,7 @@ class Purchase(models.Model):
                 # Rollback is automatic due to transaction.atomic()
                 raise ValidationError(f"Error processing purchase: {str(e)}")
 
-
-class Miscellaneous(models.Model):
+class InventoryMiscellaneous(models.Model):
     TYPE_CHOICES = (
         ("UTILITY", "Utility"),
         ("RENT", "Rent"),
@@ -206,9 +205,10 @@ class Miscellaneous(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateTimeField(default=timezone.now)
     description = models.TextField(blank=True, null=True)
+    title = models.CharField(blank=True, null=False, max_length=30)
 
     class Meta:
         db_table = "store_miscellaneous"
 
     def __str__(self):
-        return f"{self.type} - {self.amount}"
+        return f"{self.title} - {self.type}"

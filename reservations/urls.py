@@ -12,5 +12,5 @@ urlpatterns = [
     path("details/<int:reservation_id>/", views.reservations_details_view, name="reservations_details"),
     path("pdf/<int:reservation_id>/", views.receipt_pdf_view, name="reservations_receipt_pdf"),
     path("update_status/<int:reservation_id>/<str:status>/", views.update_reservation_status_view, name="update_reservation_status"),
-    path("report/", views.reservations_report_view, name="reservations_report"),
+    # path("report/", views.reservations_report_view, name="reservations_report"),
 ]

@@ -16,6 +16,9 @@
         padding: 5px 15px;
         margin: 10px 0;
     }
+    .swal2-popup {
+        font-size: 0.9rem !important;
+    }
 </style>
 {% endblock %}
 
@@ -30,7 +33,12 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Miscellaneous Expenses</h6>
-            <input type="text" class="form-control" id="miscellaneousSearch" placeholder="Search Expenses">
+            <div class="d-flex align-items-center">
+                <input type="text" class="form-control mr-2" id="miscellaneousSearch" placeholder="Search Expenses">
+                <input type="date" class="form-control mr-2" id="startDate" placeholder="Start Date">
+                <input type="date" class="form-control mr-2" id="endDate" placeholder="End Date">
+                <button class="btn btn-primary" id="filterButton">Filter</button>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -54,13 +62,15 @@
                             <td>{{ expense.amount }}</td>
                             <td>{{ expense.date }}</td>
                             <td class="text-center">
-                                <a href="{% url 'miscellaneous:miscellaneous_update' expense.id %}" class="btn btn-warning btn-sm" title="Update">
+                                <a href="{% url 'miscellaneous:miscellaneous_update' expense.id %}"
+                                   class="btn btn-warning btn-sm"
+                                   title="Update">
                                     <i class="fas fa-pen"></i>
                                 </a>
-                                <button type="button" class="btn btn-danger btn-sm" 
-                                        data-id="{{ expense.id }}" 
-                                        data-description="{{ expense.description|escapejs }}" 
-                                        onclick="confirmDelete(this.dataset.id, this.dataset.description)" 
+                                <button type="button"
+                                        class="btn btn-danger btn-sm delete-btn"
+                                        data-id="{{ expense.id }}"
+                                        data-description="{{ expense.description|escapejs }}"
                                         title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -73,13 +83,45 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the expense "<span id="expenseDescription"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+
+<script src="{% static 'assets/sweetalert2/sweetalert2@11.js' %}"></script>
+
 <script>
     $(document).ready(function() {
+        // Initialize DataTable with export buttons
         var tblMiscellaneous = $('#dataTable').DataTable({
             dom: 'Brtip',
             buttons: [
@@ -109,7 +151,7 @@
                     download: 'open',
                     orientation: 'vertical',
                     pageSize: 'A4',
-                    title: '*',
+                    title: 'Miscellaneous Expenses Report',
                     exportOptions: {
                         columns: [0, 1, 2, 3, 4]
                     },
@@ -150,7 +192,7 @@
                                     },
                                     {
                                         alignment: 'right',
-                                        text: ['page ', {text: page.toString()}, ' de ', {text: pages.toString()}]
+                                        text: ['page ', {text: page.toString()}, ' of ', {text: pages.toString()}]
                                     }
                                 ],
                                 margin: 20
@@ -165,35 +207,87 @@
             ]
         });
 
+        // Search functionality
         $('#miscellaneousSearch').on('keyup', function() {
             tblMiscellaneous.search(this.value).draw();
         });
-    });
 
-    function confirmDelete(id, description) {
-        if (confirm('Are you sure you want to delete the expense "' + description + '"?')) {
-            fetch('{% url "miscellaneous:miscellaneous_delete" 0 %}'.replace('/0', '/' + id), {
+        // Handle filter button click
+        $('#filterButton').on('click', function() {
+            const startDate = $('#startDate').val();
+            const endDate = $('#endDate').val();
+            const searchTerm = $('#miscellaneousSearch').val();
+
+            // Redirect to the filtered list view
+            window.location.href = `{% url 'miscellaneous:miscellaneous_list' %}?start_date=${startDate}&end_date=${endDate}&search=${searchTerm}`;
+        });
+
+        // Handle delete button clicks
+        let currentExpenseId = null;
+        const deleteModal = $('#deleteModal');
+
+        $('#dataTable').on('click', '.delete-btn', function() {
+            const btn = $(this);
+            currentExpenseId = btn.data('id');
+            $('#expenseDescription').text(btn.data('description'));
+            deleteModal.modal('show');
+        });
+
+        // Handle delete confirmation
+        $('#confirmDeleteBtn').on('click', function() {
+            if (!currentExpenseId) return;
+
+            fetch(`{% url "miscellaneous:delete_miscellaneous" 0 %}`.replace('/0', '/' + currentExpenseId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify({ id: currentExpenseId })
             })
             .then(response => response.json())
             .then(data => {
+                deleteModal.modal('hide');
+
                 if (data.status === 'success') {
-                    alert('Expense deleted successfully!');
-                    location.reload();
+                    // Remove the row from DataTable
+                    const row = tblMiscellaneous.row($(`button[data-id="${currentExpenseId}"]`).closest('tr'));
+                    row.remove().draw();
+
+                    // Show success notification
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Expense deleted successfully!',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
                 } else {
-                    alert('Error deleting expense: ' + data.msg);
+                    // Show error notification
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.msg || 'Error deleting expense',
+                        icon: 'error'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while deleting the expense.');
+                deleteModal.modal('hide');
+
+                // Show error notification
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while deleting the expense.',
+                    icon: 'error'
+                });
             });
-        }
-    }
+        });
+
+        // Clear currentExpenseId when modal is hidden
+        deleteModal.on('hidden.bs.modal', function() {
+            currentExpenseId = null;
+        });
+    });
 </script>
 {% endblock %}

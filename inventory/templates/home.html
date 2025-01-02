@@ -6,18 +6,14 @@
 />
 <!-- Select2 CSS -->
 <link
-  href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-  rel="stylesheet"
+href="{% static 'assets/select2/select2.min.css' %}"
+rel="stylesheet"
 />
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+  href="{% static 'assets/select2/select2-bootstrap4.min.css' %}"
 />
-<!-- Bootstrap Touchspin -->
-<link
-  rel="stylesheet"
-  href="{% static 'assets/bootstrap-touchspin-master/src/jquery.bootstrap-touchspin.css' %}"
-/>
+
 <style>
   body {
     background-color: #f3f4f6;
@@ -221,7 +217,7 @@
     </div>
 
     <div class="col-md-6 col-lg-3">
-      <a href="{% url 'inventory:add_miscellaneous' %}" class="card-link">
+      <a href="{% url 'inventory:inventory_miscellaneous_list' %}" class="card-link">
         <div class="dashboard-card">
           <div class="card-content">
             <div class="icon-container yellow">

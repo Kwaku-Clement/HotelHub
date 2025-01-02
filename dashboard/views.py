@@ -3,16 +3,16 @@ from datetime import date, datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import render
+from miscellaneous.models import Miscellaneous
 from reservations.models import Reservation, ReservationDetail
 from rooms.models import Room, RoomType
 from django.utils import timezone
-from miscellaneous.models import Miscellaneous
 from sales.models import Sales, SalesItems
 from django.db.models import Count, Sum, F, Q, Avg, Value, DecimalField, IntegerField
 from decimal import Decimal
 
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def index(request):
     today = date.today()
     start_of_week = today - timedelta(days=today.weekday())
@@ -48,6 +48,19 @@ def index(request):
     top_rooms_data = [{'name': room.name, 'days': room.days} for room in top_rooms]
     top_rooms_names_list = [room.name for room in top_rooms]
 
+    # Query miscellaneous expenses for the current period
+    period_1_miscellaneous = Miscellaneous.objects.filter(
+        date__range=(start_of_week, end_of_week)
+    ).values('type').annotate(total_amount=Sum('amount'))
+
+    period_2_miscellaneous = Miscellaneous.objects.filter(
+        date__range=(start_of_week - timedelta(days=7), start_of_week)
+    ).values('type').annotate(total_amount=Sum('amount'))
+
+    # Convert Decimal to float for JSON serialization
+    period_1_miscellaneous = [{'type': item['type'], 'total_amount': float(item['total_amount'])} for item in period_1_miscellaneous]
+    period_2_miscellaneous = [{'type': item['type'], 'total_amount': float(item['total_amount'])} for item in period_2_miscellaneous]
+
     context = {
         'start_date': start_of_week,
         'end_date': end_of_week,
@@ -58,12 +71,20 @@ def index(request):
         'earnings_data': json.dumps(earnings_data),
         'top_rooms_data': json.dumps(top_rooms_data),
         'top_rooms_names_list': top_rooms_names_list,
+        'period_1_miscellaneous': json.dumps(period_1_miscellaneous),
+        'period_2_miscellaneous': json.dumps(period_2_miscellaneous),
         'active_icon': 'index'
     }
 
+    print("Earnings Data:", earnings_data)
+    print("Top Rooms Data:", top_rooms_data)
+    print("Period 1 Miscellaneous Data:", period_1_miscellaneous)
+    print("Period 2 Miscellaneous Data:", period_2_miscellaneous)
+
     return render(request, 'index.html', context)
 
-@login_required(login_url="authentication/login/")
+
+@login_required(login_url="/authentication/login/")
 def dashboard(request):
     # Get comparison periods from request
     period_1_start = request.GET.get('period_1_start')
@@ -105,6 +126,10 @@ def dashboard(request):
         period_2_start, period_2_end
     )
 
+    # Get miscellaneous expenses for both periods
+    period_1_miscellaneous = get_miscellaneous_expenses(period_1_start, period_1_end)
+    period_2_miscellaneous = get_miscellaneous_expenses(period_2_start, period_2_end)
+
     context = {
         'period_1_start': period_1_start,
         'period_1_end': period_1_end,
@@ -118,6 +143,8 @@ def dashboard(request):
         'room_occupancy': json.dumps(room_occupancy_comparison),
         'rooms_count': Room.objects.count(),
         'room_types_count': RoomType.objects.count(),
+        'period_1_miscellaneous': json.dumps(period_1_miscellaneous),
+        'period_2_miscellaneous': json.dumps(period_2_miscellaneous),
         'active_icon': 'dashboard'
     }
 
@@ -228,6 +255,15 @@ def get_room_occupancy_comparison(p1_start, p1_end, p2_start, p2_end):
         'period_2_days': period_2_occupancy.get(room, 0)
     } for room in all_rooms]
 
+def get_miscellaneous_expenses(start_date, end_date):
+    """Get miscellaneous expenses for the period"""
+    miscellaneous_expenses = Miscellaneous.objects.filter(
+        date__range=(start_date, end_date)
+    ).values('type').annotate(
+        total_amount=Coalesce(Sum('amount'), 0, output_field=DecimalField(max_digits=10, decimal_places=2))
+    ).order_by('-total_amount')
+
+    return list(miscellaneous_expenses)
 
 def decimal_default(obj):
     if isinstance(obj, Decimal):

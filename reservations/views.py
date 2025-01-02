@@ -159,53 +159,6 @@ def fetch_resources(uri, rel):
 
     return path
 
-@login_required(login_url="authentication/login/")
-def reservations_report_view(request):
-    time_filter = request.GET.get("filter", "custom")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-    today = datetime.today().date()
-
-    time_ranges = {
-        "daily": (today, today),
-        "weekly": (today - timedelta(days=7), today),
-        "monthly": (today.replace(day=1), today),
-        "yearly": (today.replace(month=1, day=1), today),
-        "custom": (
-            datetime.strptime(start_date, "%Y-%m-%d") if start_date else None,
-            datetime.strptime(end_date, "%Y-%m-%d") if end_date else None,
-        ),
-    }
-    start_date, end_date = time_ranges.get(time_filter, (None, None))
-
-    # If no date range is selected, return an empty list of reservations
-    if not start_date or not end_date:
-        reservations = []
-    else:
-        cache_key = f"reservations_report_{time_filter}_{start_date}_{end_date}"
-        reservations = cache.get(cache_key)
-        if not reservations:
-            reservations = list(
-                Reservation.objects.prefetch_related('reservationdetail_set__room')
-                .select_related('guest')
-                .filter(reservation_date__range=(start_date, end_date))
-            )
-            cache.set(cache_key, reservations, timeout=3600)
-
-    # Calculate grand total and number of days for each reservation
-    grand_total = sum(r.grand_total for r in reservations)
-    for r in reservations:
-        r.days_spent = (r.check_out - r.check_in).days
-
-    context = {
-        "active_icon": "report",
-        "reservations": reservations,
-        "time_filter": time_filter,
-        "start_date": start_date,
-        "end_date": end_date,
-        "grand_total": grand_total,
-    }
-    return render(request, "reservations_report.html", context=context)
 
 @login_required(login_url="authentication/login/")
 def update_reservation_status_view(request, reservation_id, status):

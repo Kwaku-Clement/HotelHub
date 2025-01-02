@@ -7,6 +7,7 @@ class Miscellaneous(models.Model):
         ('purchase', 'Purchase'),
         ('maintenance', 'Maintenance'),
         ('servicing', 'Servicing'),
+        ('salary', 'Salary'),
         ('other', 'Other'),
     ]
 

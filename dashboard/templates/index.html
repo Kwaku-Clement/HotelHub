@@ -4,8 +4,8 @@
 {% block title %}Dashboard{% endblock title %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="{% static 'vendor/flatpickr/flatpickr.min.css' %}">
+<link href="{% static 'vendor/animate/animate.min.css' %}" rel="stylesheet">
 <style>
   body {
     background-color: #f8f9fa;
@@ -35,7 +35,6 @@
     animation-duration: 1s;
   }
 </style>
-
 {% endblock stylesheets %}
 
 {% block heading %}Dashboard{% endblock heading %}
@@ -161,96 +160,236 @@
       </div>
     </div>
   </div>
+
+  <!-- Miscellaneous Expenses Row -->
+  <div class="row animate__animated animate__fadeInUp">
+    <!-- Miscellaneous Expenses Chart -->
+    <div class="col-xl-12 col-lg-12">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Miscellaneous Expenses</h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-area">
+            <canvas id="miscellaneousChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock content %}
 
 {% block javascripts %}
 <!-- Chart JS -->
-<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+<script src="{% static 'vendor/chart.js/chart.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Parse the JSON data from Django
-    const earningsData = JSON.parse('{{ earnings_data|safe }}');
-    const topRoomsData = JSON.parse('{{ top_rooms_data|safe }}');
+    const earningsData = '{{ earnings_data|safe }}'.trim();
+    const topRoomsData = '{{ top_rooms_data|safe }}'.trim();
+    const period1Miscellaneous = '{{ period_1_miscellaneous|safe }}'.trim();
+    const period2Miscellaneous = '{{ period_2_miscellaneous|safe }}'.trim();
+
+    if (earningsData) {
+        const parsedEarningsData = JSON.parse(earningsData);
+        console.log("Earnings Data:", parsedEarningsData);
+    } else {
+        console.error("Earnings Data is empty or invalid");
+    }
+
+    if (topRoomsData) {
+        const parsedTopRoomsData = JSON.parse(topRoomsData);
+        console.log("Top Rooms Data:", parsedTopRoomsData);
+    } else {
+        console.error("Top Rooms Data is empty or invalid");
+    }
+
+    if (period1Miscellaneous) {
+        const parsedPeriod1Miscellaneous = JSON.parse(period1Miscellaneous);
+        console.log("Period 1 Miscellaneous:", parsedPeriod1Miscellaneous);
+    } else {
+        console.error("Period 1 Miscellaneous Data is empty or invalid");
+    }
+
+    if (period2Miscellaneous) {
+        const parsedPeriod2Miscellaneous = JSON.parse(period2Miscellaneous);
+        console.log("Period 2 Miscellaneous:", parsedPeriod2Miscellaneous);
+    } else {
+        console.error("Period 2 Miscellaneous Data is empty or invalid");
+    }
 
     // Area Chart
     const ctx = document.getElementById("myAreaChart").getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: earningsData.map(item => item.date),
-            datasets: [{
-                label: "Earnings (Ȼ)",
-                lineTension: 0.3,
-                backgroundColor: "rgba(78, 115, 223, 0.05)",
-                borderColor: "rgba(78, 115, 223, 1)",
-                pointRadius: 3,
-                pointBackgroundColor: "rgba(78, 115, 223, 1)",
-                pointBorderColor: "rgba(78, 115, 223, 1)",
-                pointHoverRadius: 3,
-                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
-                pointHitRadius: 10,
-                pointBorderWidth: 2,
-                data: earningsData.map(item => item.earning)
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                xAxes: [{
-                    gridLines: {
-                        display: false
-                    },
-                    ticks: {
-                        maxTicksLimit: 7
-                    }
-                }],
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        maxTicksLimit: 5,
-                        padding: 10,
-                        callback: function(value) {
-                            return 'Ȼ' + value;
-                        }
-                    }
+    if (earningsData) {
+        const parsedEarningsData = JSON.parse(earningsData);
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: parsedEarningsData.map(item => item.date),
+                datasets: [{
+                    label: "Earnings (Ȼ)",
+                    lineTension: 0.3,
+                    backgroundColor: "rgba(78, 115, 223, 0.05)",
+                    borderColor: "rgba(78, 115, 223, 1)",
+                    pointRadius: 3,
+                    pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                    pointBorderColor: "rgba(78, 115, 223, 1)",
+                    pointHoverRadius: 3,
+                    pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                    pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                    pointHitRadius: 10,
+                    pointBorderWidth: 2,
+                    data: parsedEarningsData.map(item => item.earning)
                 }]
             },
-            legend: {
-                display: false
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 7
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            beginAtZero: true,
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            callback: function(value) {
+                                return 'Ȼ' + value;
+                            }
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
             }
-        }
-    });
+        });
+    }
 
     // Pie Chart
     const pieCtx = document.getElementById("myPieChart").getContext('2d');
-    new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-            labels: topRoomsData.map(item => `${item.name} (${item.days} days)`),
-            datasets: [{
-                data: topRoomsData.map(item => item.days),
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
-            }],
-        },
-        options: {
-            maintainAspectRatio: false,
-            legend: {
-                display: false
+    if (topRoomsData) {
+        const parsedTopRoomsData = JSON.parse(topRoomsData);
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: parsedTopRoomsData.map(item => `${item.name} (${item.days} days)`),
+                datasets: [{
+                    data: parsedTopRoomsData.map(item => item.days),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
             },
-            tooltips: {
-                enabled: true,
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        return data.labels[tooltipItem.index];
+            options: {
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: true,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            return data.labels[tooltipItem.index];
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
+
+    // Miscellaneous Expenses Chart
+    const miscellaneousCtx = document.getElementById("miscellaneousChart").getContext('2d');
+    if (period1Miscellaneous && period2Miscellaneous) {
+        const parsedPeriod1Miscellaneous = JSON.parse(period1Miscellaneous);
+        const parsedPeriod2Miscellaneous = JSON.parse(period2Miscellaneous);
+        new Chart(miscellaneousCtx, {
+            type: 'bar',
+            data: {
+                labels: parsedPeriod1Miscellaneous.map(item => item.type),
+                datasets: [
+                    {
+                        label: 'Period 1',
+                        data: parsedPeriod1Miscellaneous.map(item => item.total_amount),
+                        backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Period 2',
+                        data: parsedPeriod2Miscellaneous.map(item => item.total_amount),
+                        backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                        borderColor: 'rgba(28, 200, 138, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            beginAtZero: true,
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            callback: function(value) {
+                                return 'Ȼ' + value;
+                            }
+                        },
+                        grid: {
+                            color: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        }
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleFontColor: '#6e707e',
+                    titleFontSize: 14,
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    intersect: false,
+                    mode: 'index',
+                    caretPadding: 10,
+                    callbacks: {
+                        label: function(tooltipItem, chart) {
+                            return chart.datasets[tooltipItem.datasetIndex].label + ': Ȼ' +
+                                   tooltipItem.raw.toLocaleString();
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutBounce'
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock javascripts %}

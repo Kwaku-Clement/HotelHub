@@ -1,6 +1,6 @@
 from datetime import timezone
 from django import forms
-from .models import Category, Miscellaneous, Product, Supplier, SupplierProduct, Purchase
+from .models import Category, InventoryMiscellaneous, Product, Supplier, SupplierProduct, Purchase
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
@@ -74,8 +74,14 @@ class PurchaseForm(forms.ModelForm):
         return purchase
     
 
-
-class MiscellaneousForm(forms.ModelForm):
+class InventoryMiscellaneousForm(forms.ModelForm):
     class Meta:
-        model = Miscellaneous
-        fields = ['type', 'amount', 'date', 'description']
+        model = InventoryMiscellaneous
+        fields = ['type', 'title', 'description', 'amount', 'date']
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'type': forms.Select(attrs={'class': 'form-control select2'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+        }

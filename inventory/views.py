@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from .models import Category, Product, Supplier,  Purchase, SupplierProduct
-from .forms import MiscellaneousForm, SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
+from .models import Category, InventoryMiscellaneous, Product, Supplier,  Purchase, SupplierProduct
+from .forms import InventoryMiscellaneousForm, SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
 from .utils import save_form_with_transaction, handle_error, handle_success, delete_instance_with_error_handling
 import logging
 from django.contrib.auth.decorators import login_required
@@ -8,9 +9,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Category, Product, Supplier, Purchase
 from .forms import SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
 from django.forms import ValidationError, modelformset_factory
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 
 
 logger = logging.getLogger(__name__)
@@ -267,7 +267,6 @@ def purchase_create_update(request, pk=None):
             except ValidationError as e:
                 messages.error(request, str(e))
         else:
-            print(form.errors)  # Debug form errors
             messages.error(request, 'Please correct the form errors.')
     else:
         form = PurchaseForm(instance=purchase)
@@ -324,14 +323,63 @@ def get_supplier_product_details(request, product_id):
     except SupplierProduct.DoesNotExist:
         return JsonResponse({'error': 'Product not found'}, status=404)
     
-
-def add_miscellaneous(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = MiscellaneousForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('select_report')
+    
+@login_required(login_url="/authentication/login/")
+def miscellaneous_create_update(request: HttpRequest, misc_id=None) -> HttpResponse:
+    if misc_id:
+        miscellaneous = get_object_or_404(InventoryMiscellaneous, id=misc_id)
+        title = "Update Miscellaneous"
     else:
-        form = MiscellaneousForm()
+        miscellaneous = None
+        title = "Add Miscellaneous"
 
-    return render(request, 'add_miscellaneous.html', {'form': form})
+    if request.method == "POST":
+        form = InventoryMiscellaneousForm(request.POST, instance=miscellaneous)
+        if form.is_valid():
+            miscellaneous, error = save_form_with_transaction(form)
+            if error:
+                handle_error(request, error)
+                return redirect('inventory:miscellaneous_create_update', misc_id=miscellaneous.id if miscellaneous else None)
+            handle_success(request, f"Miscellaneous '{miscellaneous.title}' saved successfully!")
+            return redirect('inventory:inventory_miscellaneous_list')
+        else:
+            handle_error(request, "Invalid form submission!")
+    else:
+        form = InventoryMiscellaneousForm(instance=miscellaneous)
+
+    context = {
+        "active_icon": "miscellaneous",
+        "miscellaneous_status": InventoryMiscellaneous.TYPE_CHOICES,
+        "form": form,
+        "title": title
+    }
+
+    return render(request, 'miscellaneous_create_update.html', context)
+
+
+@login_required(login_url="/authentication/login/")
+def inventory_miscellaneous_list(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    try:
+        miscellaneous = InventoryMiscellaneous.objects.all()
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            miscellaneous = miscellaneous.filter(date__range=(start_date, end_date))
+        return render(request, "inventory_miscellaneous_list.html", {"miscellaneous": miscellaneous})
+    
+    except Exception as e:
+        handle_error(request, f"Error loading miscellaneous: {str(e)}")
+        return redirect('inventory:miscellaneous_create_update')
+
+
+@login_required(login_url="/authentication/login/")
+def miscellaneous_delete_view(request, misc_id):
+    miscellaneous = get_object_or_404(InventoryMiscellaneous, id=misc_id)
+    delete_instance_with_error_handling(
+        request, miscellaneous, success_message=f"Miscellaneous: {miscellaneous.type} deleted!",
+        failure_message='Error occurred while deleting Miscellaneous'
+    )
+    return redirect('inventory:inventory_miscellaneous_list')

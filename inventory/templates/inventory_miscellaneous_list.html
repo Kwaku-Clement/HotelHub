@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Miscellaneous{% endblock title %}
+
+{% block stylesheets %}
+<!-- Bootstrap CSS -->
+<link href="{% static 'assets/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<!-- Datatables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<!-- Flatpickr -->
+<link href="{% static 'vendor/flatpickr/flatpickr.min.css' %}" rel="stylesheet">
+<!-- Animate CSS -->
+<link href="{% static 'vendor/animate/animate.min.css' %}" rel="stylesheet">
+<!-- SweetAlert2 CSS -->
+<link href="{% static 'assets/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet">
+<!-- Select2 CSS -->
+<link href="{% static 'assets/select2/select2.min.css' %}" rel="stylesheet">
+<style>
+    .card-header .row {
+        align-items: center;
+    }
+    #miscellaneousSearch {
+        max-width: 250px;
+        border-radius: 15px;
+        padding: 5px 15px;
+        margin: 10px 0;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'inventory:miscellaneous_create_update' %}" class="btn btn-dark">
+            + Add Miscellaneous
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Miscellaneous</h6>
+            <input type="text" class="form-control" id="miscellaneousSearch" placeholder="Search Miscellaneous">
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <input type="text" id="dateRangePicker" class="form-control" placeholder="Select Date Range">
+                <button class="btn btn-primary" id="filterButton">Filter</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th class="text-center">Amount</th>
+                            <th class="text-center">Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in miscellaneous %}
+                        <tr>
+                            <td>{{ m.id }}</td>
+                            <td>{{ m.get_type_display }}</td>
+                            <td>{{ m.title }}</td>
+                            <td>{{ m.description }}</td>
+                            <td class="text-right">{{ m.amount }} $</td>
+                            <td class="text-center">{{ m.date }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'inventory:miscellaneous_create_update' m.id %}" class="btn btn-warning btn-sm" title="Update">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <a href="{% url 'inventory:miscellaneous_delete' m.id %}" class="btn btn-danger btn-sm" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<!-- jQuery -->
+<script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+<!-- Bootstrap JS -->
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<!-- Datatables -->
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<!-- Moment JS -->
+<script src="{% static 'vendor/moment/moment.min.js' %}"></script>
+<!-- Flatpickr -->
+<script src="{% static 'vendor/flatpickr/flatpickr.min.js' %}"></script>
+<!-- SweetAlert2 JS -->
+<script src="{% static 'assets/sweetalert2/sweetalert2.all.min.js' %}"></script>
+<!-- Select2 JS -->
+<script src="{% static 'assets/select2/select2.min.js' %}"></script>
+
+<script>
+    // Call the dataTables jQuery plugin
+    $(document).ready(function() {
+        tblMiscellaneous = $('#dataTable').DataTable({
+            dom: 'Brtip',
+            buttons: [
+                {
+                extend: 'print',
+                text: 'Print <i class="fas fa-file ml-2"></i>',
+                titleAttr: 'Print',
+                className: 'btn btn-info',
+                exportOptions: {
+                    columns: [ 0, 1, 2, 3 ,4, 5 ]
+                }
+                },
+                {
+                    extend: 'excelHtml5',
+                    text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                    titleAttr: 'Excel',
+                    className: 'btn btn-success ml-2',
+                    exportOptions: {
+                        columns: [ 0, 1, 2, 3 ,4, 5 ]
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                    titleAttr: 'PDF',
+                    className: 'btn btn-danger ml-2',
+                    download: 'open',
+                    orientation: 'vertical',
+                    pageSize: 'A4',
+                    title: '*',
+                    exportOptions: {
+                        columns: [ 0, 1, 2, 3 ,4, 5 ]
+                    },
+                    customize: function (doc) {
+                        doc.styles = {
+                            header: {
+                                fontSize: 18,
+                                bold: true,
+                                alignment: 'center'
+                            },
+                            subheader: {
+                                fontSize: 13,
+                                bold: true
+                            },
+                            quote: {
+                                italics: true
+                            },
+                            small: {
+                                fontSize: 8
+                            },
+                            tableHeader: {
+                                bold: true,
+                                fontSize: 11,
+                                color: 'white',
+                                fillColor: '#2d4154',
+                                alignment: 'center'
+                            }
+                        };
+                        doc.content[1].table.widths = ['10%', '10%', '30%', '30%', '20%'];
+                        doc.content[1].margin = [0, 35, 0, 0];
+                        doc.content[1].layout = {};
+                        doc['footer'] = (function (page, pages) {
+                            return {
+                                columns: [
+                                    {
+                                        alignment: 'left',
+                                        text: ['Creation date: ', {text: moment().format('MM-DD-YYYY (HH:mm:ss)')}]
+                                    },
+                                    {
+                                        alignment: 'right',
+                                        text: ['page ', {text: page.toString()}, ' de ', {text: pages.toString()}]
+                                    }
+                                ],
+                                margin: 20
+                            }
+                        });
+
+                    }
+                }
+            ],
+            columnDefs: [
+            { targets: [0], visible: false, searchable: false },
+            { targets: [-1], orderable: false }
+        ]
+        });
+
+        // Custom search input
+        $('#miscellaneousSearch').on('keyup', function() {
+            tblMiscellaneous.search(this.value).draw();
+        });
+
+        // Custom search button
+        $('#searchButton').on('click', function() {
+            tblMiscellaneous.search($('#miscellaneousSearch').val()).draw();
+        });
+
+        // Flatpickr Date Range Picker
+        flatpickr("#dateRangePicker", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    var startDate = moment(selectedDates[0]).format('YYYY-MM-DD');
+                    var endDate = moment(selectedDates[1]).format('YYYY-MM-DD');
+                    window.location.href = "{% url 'inventory:inventory_miscellaneous_list' %}?start_date=" + startDate + "&end_date=" + endDate;
+                }
+            }
+        });
+
+        // Initialize Select2
+        $('.select2').select2();
+    });
+</script>
+{% endblock javascripts %}

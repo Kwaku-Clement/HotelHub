@@ -27,7 +27,10 @@ urlpatterns = [
     path('supplier/<int:supplier_id>/products/', views.get_supplier_products, name='get_supplier_products'),
     path('supplier-product/<int:product_id>/', views.get_supplier_product_details, name='get_supplier_product_details'),
     
-    path('add-miscellaneous/', views.add_miscellaneous, name='add_miscellaneous'),
+    path('inventory_miscellaneous/', views.inventory_miscellaneous_list, name='inventory_miscellaneous_list'),
+    path('inventory_miscellaneous/add/', views.miscellaneous_create_update, name='miscellaneous_create_update'),
+    path('inventory_miscellaneous/update/<int:misc_id>/', views.miscellaneous_create_update, name='miscellaneous_create_update'),
+    path('inventory_miscellaneous/delete/<int:misc_id>/', views.miscellaneous_delete_view, name='miscellaneous_delete'),
 
     path('', views.home_view, name='home'),
 ]
