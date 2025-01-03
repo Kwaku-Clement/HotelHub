@@ -1,15 +1,70 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Update Sale{% endblock title %}
+{% block title %}Edit Sale{% endblock title %}
+
+{% block stylesheets %}
+<style>
+    .revert-button {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+        margin-top: 10px;
+    }
+
+    .revert-button:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-weight: bold;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
 <div class="container">
-    <h1>Update Sale</h1>
+    <h1>Edit Sale</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Update Sale</button>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'sales:revert_sales' sale.id %}" class="btn revert-button">Revert Sale</a>
+        </div>
     </form>
 </div>
 {% endblock content %}

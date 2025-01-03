@@ -216,8 +216,6 @@ def supplier_create_update(request, pk=None):
                 return redirect('inventory:supplier_create_update', pk=pk)
         else:
             handle_error(request, 'Please correct the form errors.')
-            print(supplier_form.errors)
-            print(product_formset.errors)
     else:
         supplier_form = SupplierForm(instance=supplier)
         product_formset = SupplierProductFormSet(queryset=supplier_products)

@@ -22,15 +22,33 @@ def is_ajax(request):
 
 @login_required(login_url="authentication/login/")
 def reservations_list_view(request):
-    cache_key = f'reservations_list_{request.user.id}' 
+    cache_key = f'reservations_list_{request.user.id}'
     cache.delete(cache_key)
     
-    reservations = (
+    # Get date range from request
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    reservations_query = (
         Reservation.objects.select_related('guest')
         .prefetch_related('reservationdetail_set__room')
-        .filter(is_deleted=False) 
-        .order_by('-id')[:100]
+        .filter(is_deleted=False)
     )
+    
+    # Apply date filtering if provided
+    if start_date and end_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            end_date = end_date + timedelta(days=1)  # Include the end date
+            
+            reservations_query = reservations_query.filter(
+                reservation_date__range=[start_date, end_date]
+            )
+        except ValueError:
+            pass  # Invalid date format, ignore filtering
+    
+    reservations = reservations_query.order_by('-id')[:100]
     
     for reservation in reservations:
         reservation.status = reservation.get_status()

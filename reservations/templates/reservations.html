@@ -7,8 +7,8 @@
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <style>
     .card-header .row {
         align-items: center;
@@ -20,12 +20,10 @@
         margin: 10px 0;
     }
 </style>
-
 {% endblock stylesheets %}
 
 <!-- Page content -->
 {% block content %}
-
 <div class="container-fluid">
     <div class="row ml-0 mb-3">
         <a href="{% url 'reservations:reservations_add' %}" class="btn btn-dark reservation-button">
@@ -35,9 +33,28 @@
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Reservations</h6>
-            <input type="text" class="form-control" id="reservationSearch" placeholder="Search Reservations">
+        <div class="card-header py-3">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Reservations</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-2">
+                            <button id="filterDate" class="btn btn-primary">Filter</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="reservationSearch" placeholder="Search Reservations">
+                </div>
+            </div>
         </div>
 
         <div class="card-body ">
@@ -113,7 +130,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                
                             </td>
                         </tr>
                         {% endfor %}
@@ -133,11 +149,10 @@
 <!--Datatable buttons-->
 <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/vfs_fonts.js"' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/buttons.print.min.js"' %}"></script>
-<script src="{% static 'vendor/datatables/jquery.dataTables.min"' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
 <!--Moment JS-->
 <script src="{% static 'vendor/moment/moment.min.js' %}"></script>
 
@@ -239,6 +254,15 @@
       $('#searchButton').on('click', function() {
           tblReservation.search($('#reservationSearch').val()).draw();
       });
+
+      // Filter date button
+      $('#filterDate').on('click', function() {
+          var startDate = $('#startDate').val();
+          var endDate = $('#endDate').val();
+          if (startDate && endDate) {
+              window.location.href = `?start_date=${startDate}&end_date=${endDate}`;
+          }
+      });
   });
 
 // Alert when trying to delete a reservation
@@ -255,7 +279,6 @@ $(document).ready(function() {
           $('#deleteModal').modal('show');
       });
 });
-
 
 </script>
 

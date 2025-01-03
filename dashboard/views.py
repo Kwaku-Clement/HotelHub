@@ -75,14 +75,7 @@ def index(request):
         'period_2_miscellaneous': json.dumps(period_2_miscellaneous),
         'active_icon': 'index'
     }
-
-    print("Earnings Data:", earnings_data)
-    print("Top Rooms Data:", top_rooms_data)
-    print("Period 1 Miscellaneous Data:", period_1_miscellaneous)
-    print("Period 2 Miscellaneous Data:", period_2_miscellaneous)
-
     return render(request, 'index.html', context)
-
 
 @login_required(login_url="/authentication/login/")
 def dashboard(request):
@@ -138,13 +131,13 @@ def dashboard(request):
         'period_1_metrics': period_1_metrics,
         'period_2_metrics': period_2_metrics,
         'comparison_metrics': comparison_metrics,
-        'period_1_earnings': json.dumps(period_1_earnings),
-        'period_2_earnings': json.dumps(period_2_earnings),
-        'room_occupancy': json.dumps(room_occupancy_comparison),
+        'period_1_earnings': json.dumps(period_1_earnings, default=float),
+        'period_2_earnings': json.dumps(period_2_earnings, default=float),
+        'room_occupancy': json.dumps(room_occupancy_comparison, default=float),
         'rooms_count': Room.objects.count(),
         'room_types_count': RoomType.objects.count(),
-        'period_1_miscellaneous': json.dumps(period_1_miscellaneous),
-        'period_2_miscellaneous': json.dumps(period_2_miscellaneous),
+        'period_1_miscellaneous': json.dumps(period_1_miscellaneous, default=float),
+        'period_2_miscellaneous': json.dumps(period_2_miscellaneous, default=float),
         'active_icon': 'dashboard'
     }
 

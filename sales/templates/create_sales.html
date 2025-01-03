@@ -373,11 +373,16 @@
               title: "Sale Complete",
               text: "Sale has been processed successfully!",
               showCancelButton: true,
-              confirmButtonText: "View Receipt",
+              confirmButtonText: "Print Receipt",
               cancelButtonText: "New Sale",
             }).then((result) => {
               if (result.isConfirmed) {
-                window.location.href = `{% url 'sales:receipt' sale_id=0 %}`.replace('0', response.sale_id);
+                // Open the receipt URL in a new tab and print it
+                const receiptUrl = `{% url 'sales:receipt' sale_id=0 %}`.replace('0', response.sale_id);
+                const newTab = window.open(receiptUrl, '_blank');
+                newTab.onload = function() {
+                  newTab.print();
+                };
               } else {
                 window.location.reload();
               }

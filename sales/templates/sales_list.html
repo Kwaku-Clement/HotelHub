@@ -3,8 +3,9 @@
 
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/buttons.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 
 <style>
     .card-header .row {
@@ -15,6 +16,19 @@
         border-radius: 15px;
         padding: 5px 15px;
         margin: 10px 0;
+    }
+    .date-filter {
+        display: flex;
+        gap: 10px;
+    }
+    .dt-buttons {
+        margin-bottom: 15px;
+    }
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+    .dataTables_filter {
+        float: right;
     }
 </style>
 {% endblock stylesheets %}
@@ -31,69 +45,72 @@
         </div>
     </div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <a href="{% url 'sales:create_sales' %}" class="btn btn-dark">
-        + Make Sales
-    </a>
-</div>
-
-<div class="card shadow mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-primary">Sales</h6>
-        <input type="text" class="form-control" id="salesSearch" placeholder="Search Sales">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'sales:create_sales' %}" class="btn btn-dark">
+            + Make Sales
+        </a>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
-                <thead class="thead-light">
-                    <tr>
-                        <th class="text-center py-1">Code</th>
-                        <th class="text-center py-1">Seller</th>
-                        <th class="text-center py-1">Date and Time</th>
-                        <th class="text-center py-1">Products</th>
-                        <th class="text-center py-1">Grand Total</th>
-                        <th class="text-center py-1">Total Items</th>
-                        <th class="text-center py-1">Receipt</th>
-                        <th class="text-center py-1">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sale in sale_data %}
-                    <tr>
-                        <td class="px-2 py-1 text-center">{{ sale.code }}</td>
-                        <td class="px-2 py-1 text-center">{{ request.user.get_full_name}}</td>
-                        <td class="px-2 py-1 text-center">{{ sale.date_added|date:'d-m-Y H:i' }}</td>
-                        <td class="px-2 py-1">
-                            {% if sale.products_list %}
-                                {% for product, quantity in sale.products_list.items %}
-                                    {{ product|capfirst }} - {{ quantity }}<br>
-                                {% endfor %}
-                            {% endif %}
-                        </td>
-                        <td class="px-2 py-1 text-right">{{ sale.grand_total|floatformat:2 }}</td>
-                        <td class="px-2 py-1 text-center">{{ sale.total_items_sold }}</td>
-                        <td class="px-2 py-1 text-right">{{ sale.grand_total }}</td>
-                        <td class="px-2 py-1 text-center">
-                            {% if perms.sales.view_sales %}
-                            <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--light mdc-ripple-upgraded view-data"
-                                    type="button" data-id="{{ sale.id }}" title="View Receipt">
-                                <i class="material-icons mdc-button__icon">receipt</i>
-                            </button>
-                            {% endif %}
-                            {% if perms.sales.delete_sales %}
-                            <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--danger mdc-ripple-upgraded delete-data"
-                                    type="button" data-id="{{ sale.id }}" data-code="{{ sale.code }}" title="Delete Sale">
-                                <i class="material-icons mdc-button__icon">delete_outline</i>
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Sales</h6>
+            <div class="date-filter">
+                <input type="text" class="form-control" id="startDate" placeholder="Start Date">
+                <input type="text" class="form-control" id="endDate" placeholder="End Date">
+                <button class="btn btn-primary" id="filterButton">Filter</button>
+            </div>
+            <input type="text" class="form-control" id="salesSearch" placeholder="Search Sales">
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th class="text-center py-1">Code</th>
+                            <th class="text-center py-1">Seller</th>
+                            <th class="text-center py-1">Date and Time</th>
+                            <th class="text-center py-1">Products</th>
+                            <th class="text-center py-1">Grand Total</th>
+                            <th class="text-center py-1">Total Items</th>
+                            <th class="text-center py-1">Receipt</th>
+                            <th class="text-center py-1">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sale_data %}
+                        <tr>
+                            <td class="px-2 py-1 text-center">{{ sale.code }}</td>
+                            <td class="px-2 py-1 text-center">{{ user.username }}</td>
+                            <td class="px-2 py-1 text-center">{{ sale.date_added|date:'d-m-Y H:i' }}</td>
+                            <td class="px-2 py-1">
+                                {% if sale.products_list %}
+                                    {% for product, quantity in sale.products_list.items %}
+                                        {{ product|capfirst }} - {{ quantity }}<br>
+                                    {% endfor %}
+                                {% endif %}
+                            </td>
+                            <td class="px-2 py-1 text-right">{{ sale.grand_total|floatformat:2 }}</td>
+                            <td class="px-2 py-1 text-center">{{ sale.total_items_sold }}</td>
+                            <td class="px-2 py-1 text-center">
+                                {% if perms.sales.view_sales %}
+                                <a href="{% url 'sales:receipt' sale.id %}" class="btn btn-primary btn-sm">View Receipt</a>
+                                {% endif %}
+                            </td>
+                            <td class="px-2 py-1 text-center">
+                                {% if perms.sales.change_sales %}
+                                <a href="{% url 'sales:update_sales' sale.id %}" class="btn btn-warning btn-sm">Edit</a>
+                                {% endif %}
+                                {% if perms.sales.delete_sales %}
+                                <a href="{% url 'sales:delete_sales' sale.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 
 </div>
 {% endblock content %}
@@ -103,104 +120,69 @@
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 <!--Datatable buttons-->
+<script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/vfs_fonts.js"' %}"></script>
-<script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/buttons.print.min.js"' %}"></script>
-<script src="{% static 'vendor/datatables/jquery.dataTables.min"' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
 <!--Moment JS-->
 <script src="{% static 'vendor/moment/moment.min.js' %}"></script>
 
-<!--Datatables-->
 <script>
-    // Call the dataTables jQuery plugin
     $(document).ready(function() {
         tblRooms = $('#dataTable').DataTable({
             dom: 'Brtip',
             buttons: [
                 {
-                extend: 'print',
-                text: 'Print <i class="fas fa-file ml-2"></i>',
-                titleAttr: 'Print',
-                className: 'btn btn-info',
-                exportOptions: {
-                    columns: [ 0, 1, 2, 3 ,4 ]
-                }
+                    extend: 'print',
+                    text: '<i class="fas fa-print"></i> Print',
+                    titleAttr: 'Print',
+                    className: 'btn btn-info btn-sm',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5]
+                    }
                 },
                 {
                     extend: 'excelHtml5',
-                    text: 'Excel <i class="fas fa-file-excel ml-2"></i>',
+                    text: '<i class="fas fa-file-excel"></i> Excel',
                     titleAttr: 'Excel',
-                    className: 'btn btn-success ml-2',
+                    className: 'btn btn-success btn-sm',
                     exportOptions: {
-                        columns: [ 0, 1, 2, 3 ,4 ]
+                        columns: [0, 1, 2, 3, 4, 5]
                     }
                 },
                 {
                     extend: 'pdfHtml5',
-                    text: 'PDF <i class="fas fa-file-pdf ml-2"></i>',
+                    text: '<i class="fas fa-file-pdf"></i> PDF',
                     titleAttr: 'PDF',
-                    className: 'btn btn-danger ml-2',
-                    download: 'open',
-                    orientation: 'vertical',
-                    pageSize: 'A4',
-                    title: '*',
+                    className: 'btn btn-danger btn-sm',
                     exportOptions: {
-                        columns: [ 0, 1, 2, 3 ,4 ]
+                        columns: [0, 1, 2, 3, 4, 5]
                     },
                     customize: function (doc) {
-                        doc.styles = {
-                            header: {
-                                fontSize: 18,
-                                bold: true,
-                                alignment: 'center'
-                            },
-                            subheader: {
-                                fontSize: 13,
-                                bold: true
-                            },
-                            quote: {
-                                italics: true
-                            },
-                            small: {
-                                fontSize: 8
-                            },
-                            tableHeader: {
-                                bold: true,
-                                fontSize: 11,
-                                color: 'white',
-                                fillColor: '#2d4154',
-                                alignment: 'center'
-                            }
+                        doc.content[1].table.widths = 
+                            Array(doc.content[1].table.body[0].length + 1).join('*').split('');
+                        doc.styles.tableHeader = {
+                            color: 'white',
+                            background: '#2d4154',
+                            alignment: 'center',
+                            fontSize: 11,
+                            bold: true
                         };
-                        doc.content[1].table.widths = ['10%', '10%', '30%', '30%', '20%'];
-                        doc.content[1].margin = [0, 35, 0, 0];
-                        doc.content[1].layout = {};
-                        doc['footer'] = (function (page, pages) {
-                            return {
-                                columns: [
-                                    {
-                                        alignment: 'left',
-                                        text: ['Creation date: ', {text: moment().format('MM-DD-YYYY (HH:mm:ss)')}]
-                                    },
-                                    {
-                                        alignment: 'right',
-                                        text: ['page ', {text: page.toString()}, ' de ', {text: pages.toString()}]
-                                    }
-                                ],
-                                margin: 20
-                            }
-                        });
-
+                        doc.styles.tableBodyEven = {
+                            background: '#f2f2f2'
+                        };
+                        doc.styles.tableBodyOdd = {
+                            background: '#ffffff'
+                        };
                     }
                 }
             ],
             columnDefs: [
-            { targets: [0], visible: false, searchable: false },
-            { targets: [-1], orderable: false }
-        ]
+                { targets: [-1], orderable: false }
+            ]
         });
 
         // Custom search input
@@ -208,26 +190,13 @@
             tblRooms.search(this.value).draw();
         });
 
-        // Custom search button
-        $('#searchButton').on('click', function() {
-            tblRooms.search($('#salesSearch').val()).draw();
+        // Date filter button
+        $('#filterButton').on('click', function() {
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+            window.location.href = "{% url 'sales:sales_list' %}?start_date=" + startDate + "&end_date=" + endDate;
         });
     });
-
-// Alert when trying to delete a room
-$('#dataTable tbody')
-    // Event when whe try to delete a room
-    // We update the text, and href of the modal delete button
-    .on('click', 'button[rel="delete"]', function () {
-    // Row variable
-    var tr = tblRooms.cell($(this).closest('td, li')).index();
-    row_data = ( tblRooms.row(tr.row).data());
-    room_id = row_data[0];
-    room_name = row_data[2]
-    new_delete_url  = 'delete/' + room_id;
-    document.getElementById("updateThisText").innerHTML = "Are you sure you want to delete the room:  " + room_name + "?";
-    document.getElementById("updateThisURL").href=new_delete_url;
-    });
-
 </script>
 {% endblock javascripts %}
+

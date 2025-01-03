@@ -32,24 +32,24 @@ class DateRangeError(ValidationError):
 def validate_date_range(start_date: str, end_date: str) -> Tuple[datetime, datetime]:
     """
     Validate and convert date strings to datetime objects.
-    
+
     Args:
         start_date: Start date string in YYYY-MM-DD format
         end_date: End date string in YYYY-MM-DD format
-        
+
     Returns:
         Tuple of datetime objects (start_datetime, end_datetime)
-        
+
     Raises:
         DateRangeError: If dates are invalid or end_date is before start_date
     """
     try:
         start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
         end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
-        
+
         if end_datetime < start_datetime:
             raise DateRangeError("End date must be after start date")
-            
+
         return start_datetime, end_datetime
     except ValueError as e:
         raise DateRangeError(f"Invalid date format: {str(e)}")
@@ -57,7 +57,7 @@ def validate_date_range(start_date: str, end_date: str) -> Tuple[datetime, datet
 def get_default_date_range() -> Tuple[str, str]:
     """
     Get default date range (current month).
-    
+
     Returns:
         Tuple of strings (start_date, end_date) in YYYY-MM-DD format
     """
@@ -83,13 +83,13 @@ def generate_store_explanation(
         key=lambda x: x['total_sales'],
         reverse=True
     )[:5]
-    
+
     product_sales = sorted(
         report_data.get('product_sales', []),
         key=lambda x: x['total_sales'],
         reverse=True
     )[:5]
-    
+
     supplier_expenses = sorted(
         report_data.get('supplier_expenses', []),
         key=lambda x: x['total_purchases'],
@@ -191,7 +191,7 @@ def generate_report(request: HttpRequest) -> HttpResponse:
             report_type = form.cleaned_data['report_type']
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
-            
+
             return redirect(
                 f'reports:{report_type}_report_with_date',
                 start_date=start_date.strftime('%Y-%m-%d'),
@@ -199,14 +199,87 @@ def generate_report(request: HttpRequest) -> HttpResponse:
             )
     else:
         form = ReportSelectionForm(initial={'report_type': DEFAULT_REPORT_TYPE})
-    
+
     return render(
         request,
         'select_report.html',
         {'form': form}
     )
 
-# Updated methods to convert Decimal values to float
+@login_required
+def generate_reservation_report(
+    request: HttpRequest,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+) -> HttpResponse:
+    """
+    Generate and display reservation report.
+    """
+    try:
+        if start_date is None or end_date is None:
+            start_date, end_date = get_default_date_range()
+
+        start_datetime, end_datetime = validate_date_range(start_date, end_date)
+
+        logger.info(f"Fetching reservation report for: {start_date} - {end_date}")
+
+        # Generate report data
+        service = ReservationReportService(start_datetime, end_datetime)
+        report_data = service.generate_report()
+
+        # Calculate financial metrics
+        total_reservation_revenue = Decimal(report_data['total_reservation_revenue'])
+        total_miscellaneous = Decimal(report_data['total_miscellaneous'])
+        net_reservation_revenue = Decimal(report_data['net_reservation_revenue'])
+
+        # Calculate average revenue per reservation
+        total_reservations = report_data['reservations'].count()
+        average_revenue_per_reservation = (
+            total_reservation_revenue / total_reservations if total_reservations > 0 else Decimal('0.00')
+        )
+
+        # Paginate reservations and include guest names
+        reservations = report_data['reservations'].order_by('-reservation_date')
+        for reservation in reservations:
+            reservation.guest_name = reservation.guest.get_full_name()
+
+        paginator = Paginator(reservations, ITEMS_PER_PAGE)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'reservations_page': page_obj,
+            'total_reservation_revenue': total_reservation_revenue,
+            'total_miscellaneous': total_miscellaneous,
+            'net_reservation_revenue': net_reservation_revenue,
+            'selected_date_range': f"{start_date} to {end_date}",
+            'explanation': generate_reservation_explanation(
+                total_reservation_revenue,
+                total_miscellaneous,
+                net_reservation_revenue,
+                report_data
+            ),
+            'top_reservations': report_data['top_reservations'],
+            'top_guests': report_data['top_guests'],
+            'average_revenue_per_reservation': average_revenue_per_reservation
+        }
+        logger.info("Report data successfully generated.")
+
+        return render(request, 'reservation_report.html', context)
+
+    except DateRangeError as e:
+        messages.error(request, str(e))
+        logger.error(f"Error rendering reservation report view: {e}")
+
+        return redirect('reports:select_report')
+    except Exception as e:
+        messages.error(request, f"An error occurred while generating the report: {str(e)}")
+        logger.error(f"Unexpected error: {e}")
+
+        return redirect('reports:select_report')
+
+
+@login_required
 def generate_store_report(
     request: HttpRequest,
     start_date: Optional[str] = None,
@@ -279,71 +352,5 @@ def generate_store_report(
         return redirect('reports:select_report')
     except Exception as e:
         messages.error(request, f"An error occurred while generating the report: {str(e)}")
-        return redirect('reports:select_report')
-    
-@login_required
-def generate_reservation_report(
-    request: HttpRequest,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-) -> HttpResponse:
-    """
-    Generate and display reservation report.
-    """
-    try:
-        if start_date is None or end_date is None:
-            start_date, end_date = get_default_date_range()
-
-        start_datetime, end_datetime = validate_date_range(start_date, end_date)
-        
-        logger.info(f"Fetching reservation report for: {start_date} - {end_date}")
-
-        # Generate report data
-        service = ReservationReportService(start_datetime, end_datetime)
-        report_data = service.generate_report()
-
-        # Calculate financial metrics
-        total_reservation_revenue = Decimal(report_data['total_reservation_revenue'])
-        total_miscellaneous = Decimal(report_data['total_miscellaneous'])
-        net_reservation_revenue = Decimal(report_data['net_reservation_revenue'])
-
-        # Calculate average revenue per reservation
-        total_reservations = report_data['reservations'].count()
-        average_revenue_per_reservation = (
-            total_reservation_revenue / total_reservations if total_reservations > 0 else Decimal('0.00')
-        )
-
-        # Paginate reservations
-        reservations = report_data['reservations'].order_by('-reservation_date')  # Use the correct field name
-        paginator = Paginator(reservations, ITEMS_PER_PAGE)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
-
-        context = {
-            'reservations_page': page_obj,
-            'total_reservation_revenue': total_reservation_revenue,
-            'total_miscellaneous': total_miscellaneous,
-            'net_reservation_revenue': net_reservation_revenue,
-            'selected_date_range': f"{start_date} to {end_date}",
-            'explanation': generate_reservation_explanation(
-                total_reservation_revenue,
-                total_miscellaneous,
-                net_reservation_revenue,
-                report_data
-            ),
-            'top_reservations': report_data['top_reservations'],
-            'top_guests': report_data['top_guests'],
-            'average_revenue_per_reservation': average_revenue_per_reservation
-        }
-        logger.info("Report data successfully generated.")
-
-        return render(request, 'reservation_report.html', context)
-
-    except DateRangeError as e:
-        messages.error(request, str(e))
-        logger.error(f"Error rendering reservation report view: {e}")
-
-        return redirect('reports:select_report')
-    except Exception as e:
-        messages.error(request, f"An error occurred while generating the report: {str(e)}")
+        logger.error(f"Unexpected error: {e}")
         return redirect('reports:select_report')

@@ -57,7 +57,7 @@
                             <td>{{ purchase.product.product_name }}</td>
                             <td>{{ purchase.supplier.supplier_name }}</td>
                             <td>{{ purchase.quantity }}</td>
-                            <td class="text-right">{{ purchase.price_per_unit }} $</td>
+                            <td>{{ purchase.price_per_unit }} $</td>
                             <td>{{ purchase.purchase_at }}</td>
                     
                             <td class="text-center">
@@ -107,11 +107,10 @@
 <!--Datatable buttons-->
 <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/vfs_fonts.js"' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/buttons.print.min.js"' %}"></script>
-<script src="{% static 'vendor/datatables/jquery.dataTables.min"' %}"></script>
+<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
 <!--Moment JS-->
 <script src="{% static 'vendor/moment/moment.min.js' %}"></script>
 

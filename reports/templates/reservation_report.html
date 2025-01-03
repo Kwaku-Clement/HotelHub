@@ -20,11 +20,8 @@
     .report-section {
         margin-bottom: 2rem;
     }
-    .metrics-card {
-        background-color: #fff;
-        border-radius: 0.25rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
+    .table-responsive {
+        margin-bottom: 2rem;
     }
     .profit {
         color: #28a745;
@@ -32,111 +29,193 @@
     .loss {
         color: #dc3545;
     }
+    @media print {
+        .card-title, .card-body p {
+            text-align: center;
+        }
+        .report-section {
+            margin: 2rem 0;
+        }
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            color: #212529;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 0.75rem;
+            vertical-align: top;
+            border-top: 1px solid #dee2e6;
+        }
+        .table th {
+            text-align: inherit;
+        }
+    }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <div class="card-body">
-            <h1 class="card-title">Reservation Report</h1>
-            <p class="text-muted">Report Period: {{ selected_date_range }}</p>
+    <div class="text-right mb-3">
+        <button class="btn btn-primary" onclick="printReport()">Print Report</button>
+        <button class="btn btn-secondary" onclick="exportToPDF()">Export to PDF</button>
+    </div>
 
-            <div class="report-section">
-                <h2>Financial Summary</h2>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="metrics-card">
-                            <h6>Total Reservation Revenue</h6>
-                            <h3>${{ total_reservation_revenue|floatformat:2 }}</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="metrics-card">
-                            <h6>Total Miscellaneous Expenses</h6>
-                            <h3>${{ total_miscellaneous|floatformat:2 }}</h3>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="metrics-card">
-                            <h6>Net Reservation Revenue</h6>
-                            <h3>${{ net_reservation_revenue|floatformat:2 }}</h3>
-                        </div>
+    <div id="printableReport">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Reservation Report</h1>
+                <p class="text-muted">Report Period: {{ selected_date_range }}</p>
+
+                <div class="report-section">
+                    <h2>Financial Summary</h2>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Reservation Revenue</td>
+                                    <td>${{ total_reservation_revenue|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Miscellaneous Expenses</td>
+                                    <td>${{ total_miscellaneous|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Net Reservation Revenue</td>
+                                    <td>${{ net_reservation_revenue|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
 
-            <div class="report-section">
-                <h2>Analysis</h2>
-                <div class="report-data">{{ explanation|linebreaksbr }}</div>
-            </div>
+                <div class="report-section">
+                    <h2>Analysis</h2>
+                    <div class="report-data text-center mb-4">{{ explanation|linebreaksbr }}</div>
 
-            <div class="report-section">
-                <h2>Top Reservations</h2>
-                <ul class="list-group">
-                    {% for reservation in top_reservations %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ reservation.guest.get_full_name }}</strong>
-                            <p class="mb-0 text-muted">{{ reservation.reservation_date|date:"M d, Y" }}</p>
-                            <p class="mb-0 text-muted">Total: ${{ reservation.total_amount|floatformat:2 }}</p>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+                    <h3>Top Reservations</h3>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Guest Name</th>
+                                    <th>Reservation Date</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in top_reservations %}
+                                <tr>
+                                    <td>{{ reservation.guest_name }}</td>
+                                    <td>{{ reservation.reservation_date|date:"M d, Y" }}</td>
+                                    <td>${{ reservation.grand_total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
 
-            <div class="report-section">
-                <h2>Top Guests</h2>
-                <ul class="list-group">
-                    {% for guest in top_guests %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ guest.guest.get_full_name }}
-                        <span class="badge bg-primary rounded-pill">${{ guest.total_spent|floatformat:2 }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <div class="report-section">
-                <h2>Average Revenue Per Reservation</h2>
-                <div class="metrics-card">
-                    <h3>${{ average_revenue_per_reservation|floatformat:2 }}</h3>
+                    <h3>Top Guests by Reservation Amount</h3>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Guest Name</th>
+                                    <th>Total Reservations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for guest in top_guests %}
+                                <tr>
+                                    <td>{{ guest.guest_name }}</td>
+                                    <td>${{ guest.total_reservations|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <div class="report-section">
-                <h2>Paginated Reservations</h2>
-                <ul class="list-group">
-                    {% for reservation in reservations_page %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ reservation.guest.get_full_name }}</strong>
-                            <p class="mb-0 text-muted">{{ reservation.reservation_date|date:"M d, Y" }}</p>
-                            <p class="mb-0 text-muted">Total: ${{ reservation.total_amount|floatformat:2 }}</p>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <nav class="mt-4">
-                    <ul class="pagination">
-                        {% if reservations_page.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ reservations_page.previous_page_number }}">Previous</a>
-                        </li>
-                        {% endif %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ reservations_page.number }}</span>
-                        </li>
-                        {% if reservations_page.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ reservations_page.next_page_number }}">Next</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                <div class="report-section">
+                    <h2>Average Revenue Per Reservation</h2>
+                    <div class="metrics-card text-center">
+                        <h3>${{ average_revenue_per_reservation|floatformat:2 }}</h3>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h2>Paginated Reservations</h2>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Guest Name</th>
+                                    <th>Reservation Date</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations_page %}
+                                <tr>
+                                    <td>{{ reservation.guest_name }}</td>
+                                    <td>{{ reservation.reservation_date|date:"M d, Y" }}</td>
+                                    <td>${{ reservation.grand_total|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav class="mt-4">
+                        <ul class="pagination">
+                            {% if reservations_page.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ reservations_page.previous_page_number }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ reservations_page.number }}</span>
+                            </li>
+                            {% if reservations_page.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ reservations_page.next_page_number }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+<script>
+    function printReport() {
+        const printableContent = document.getElementById('printableReport').innerHTML;
+        const originalContent = document.body.innerHTML;
+
+        document.body.innerHTML = printableContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+    }
+
+    function exportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.html(document.getElementById('printableReport'), {
+            callback: function (doc) {
+                doc.save('reservation_report.pdf');
+            },
+            x: 10,
+            y: 10
+        });
+    }
+</script>
 {% endblock content %}

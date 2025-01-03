@@ -61,16 +61,6 @@
 <!-- Page content -->
 {% block content %}
 <div class="container-fluid">
-    <!-- Go back button -->
-    <div class="mb-3">
-        <a href="{% url 'reservations:reservations_list' %}">
-            <button type="button" class="btn btn-info font-weight-bold">
-                <i class="fas fa-long-arrow-alt-left mr-2"></i>
-                Go back
-            </button>
-        </a>
-    </div>
-
     <!-- Reservation details form -->
     <form action="{% url 'reservations:reservations_edit' reservation.id %}" class="reservationForm" method="post">
         {% csrf_token %}

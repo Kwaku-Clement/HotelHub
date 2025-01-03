@@ -12,4 +12,5 @@ urlpatterns = [
     path('sales/details/<int:sale_id>/', views.sales_details_view, name='sales_details'),
     path('sales/checkout-modal/', views.checkout_modal, name='checkout_modal'),
     path('sales/process-payment/', views.process_payment, name='process_payment'),
+    path('sales/revert/<int:sale_id>/', views.revert_sales_view, name='revert_sales'),
 ]

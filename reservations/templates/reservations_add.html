@@ -275,8 +275,7 @@ rel="stylesheet"
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+ <script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <!-- Select2 -->
 <script src="{%static 'assets/select2/select2.min.js' %}" defer></script>
 <!-- Bootstrap Touchspin -->
@@ -492,14 +491,38 @@ $(document).ready(function () {
   var day = String(today.getDate()).padStart(2, '0');
   var currentDate = year + '-' + month + '-' + day;
 
+  // Set the default date to today for check-in and check-out fields
   $('#check_in').val(currentDate);
   $('#check_out').val(currentDate);
 
   // Handle date change
   $('#check_in, #check_out').on('change', function() {
-    var check_in = $('#check_in').val();
-    var check_out = $('#check_out').val();
-    var days = calculateDaysBetweenDates(check_in, check_out);
+    var check_in = new Date($('#check_in').val() + 'T00:00:00');
+    var check_out = new Date($('#check_out').val() + 'T00:00:00');
+    var currentDate = new Date();
+    currentDate.setHours(0,0,0,0);
+    
+    if (check_in.getTime() < currentDate.getTime() - 86400000) {
+      Swal.fire({
+        title: "Invalid Date",
+        text: "Check-in date cannot be earlier than the current date",
+        icon: "warning"
+      });
+      $('#check_in').val(currentDate.toISOString().split('T')[0]);
+      return;
+    }
+
+    if (check_out.getTime() < check_in.getTime()) {
+      Swal.fire({
+        title: "Invalid Date",
+        text: "Check-out date must be after or equal to the check-in date",
+        icon: "warning"
+      });
+      $('#check_out').val($('#check_in').val());
+      return;
+    }
+
+    var days = calculateDaysBetweenDates($('#check_in').val(), $('#check_out').val());
 
     // Update the days for all rooms without removing them
     $.each(reservation.items.rooms, function(index, room) {
@@ -508,20 +531,22 @@ $(document).ready(function () {
     });
 
     reservation.calculate_reservation();
-    reservation.list_room(); // Redraw the table with updated data
+    reservation.list_room();
   });
 
   // Form submission
   $("form.reservationForm").on("submit", function (e) {
     e.preventDefault();
 
-    var check_in = new Date($('input[name="check_in"]').val());
-    var check_out = new Date($('input[name="check_out"]').val());
+    var check_in = new Date($('input[name="check_in"]').val() + 'T00:00:00');
+    var check_out = new Date($('input[name="check_out"]').val() + 'T00:00:00');
     var currentDate = new Date();
+    currentDate.setHours(0,0,0,0);
 
-    if (check_in < currentDate || check_out < currentDate) {
+    if (check_in.getTime() < currentDate.getTime() - 86400000 || check_out.getTime() < check_in.getTime()) {
       Swal.fire({
-        title: "Selected date cannot be less than the current date",
+        title: "Invalid Dates",
+        text: "Check-in date cannot be in the past, and check-out date must be after or equal to check-in date",
         icon: "warning"
       });
       return false;

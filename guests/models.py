@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import now
 
 class Guest(models.Model):
     first_name = models.CharField(max_length=256)
@@ -6,6 +7,7 @@ class Guest(models.Model):
     address = models.TextField(max_length=256, blank=True, null=True)
     national_id = models.TextField(max_length=256, blank=True, null=True)
     phone = models.CharField(max_length=30, blank=True, null=True)
+    created_at = models.DateField(default=now)
 
     class Meta:
         db_table = 'Guests'

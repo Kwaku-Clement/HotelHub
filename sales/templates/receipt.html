@@ -14,7 +14,7 @@
     }
 
     .receipt {
-        width: 300px;
+        width: 400px;
         max-width: 100%;
         margin: 20px auto;
         padding: 20px;
@@ -24,10 +24,61 @@
         overflow: hidden;
     }
 
+    /* Print button styles */
+    .print-button {
+        display: block;
+        width: 100%;
+        max-width: 200px;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .print-button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Print-specific styles */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .receipt, .receipt * {
+            visibility: visible;
+        }
+
+        .receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .print-button {
+            display: none;
+        }
+
+        /* Remove any background colors for better printing */
+        .receipt th {
+            background-color: transparent !important;
+        }
+    }
+
     .receipt h1 {
-        font-size: 24px;
+        font-size: 28px;
         color: #343a40;
         margin-bottom: 10px;
+        text-align: center;
     }
 
     .receipt p {
@@ -56,8 +107,9 @@
 
     .receipt .total-row {
         font-weight: bold;
-        font-size: 16px;
+        font-size: 18px;
         color: #343a40;
+        text-align: right;
     }
 
     .receipt .footer {
@@ -72,6 +124,96 @@
         font-weight: bold;
     }
 
+    .receipt .header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .receipt .header img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+    }
+
+    .receipt .header h2 {
+        font-size: 24px;
+        margin: 10px 0;
+    }
+
+    .receipt .header p {
+        font-size: 16px;
+        margin: 5px 0;
+    }
+
+    .receipt .details {
+        margin-bottom: 20px;
+    }
+
+    .receipt .details p {
+        margin: 5px 0;
+    }
+
+    .receipt .details p strong {
+        font-weight: bold;
+    }
+
+    .receipt .items {
+        margin-bottom: 20px;
+    }
+
+    .receipt .items table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .receipt .items th, .receipt .items td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .receipt .items th {
+        background-color: #f1f1f1;
+        font-weight: bold;
+    }
+
+    .receipt .summary {
+        margin-bottom: 20px;
+    }
+
+    .receipt .summary p {
+        margin: 5px 0;
+        text-align: right;
+    }
+
+    .receipt .summary p strong {
+        font-weight: bold;
+    }
+
+    .receipt .summary .total-row {
+        font-size: 18px;
+        color: #343a40;
+    }
+
+    .receipt .summary .highlight {
+        color: #e63946;
+    }
+
+    .receipt .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+    .receipt .footer p {
+        margin: 5px 0;
+    }
+
+    .receipt .footer p strong {
+        font-weight: bold;
+    }
+
     @media (max-width: 600px) {
         .receipt {
             width: 90%;
@@ -79,7 +221,7 @@
         }
 
         .receipt h1 {
-            font-size: 20px;
+            font-size: 24px;
         }
 
         .receipt th, .receipt td {
@@ -87,47 +229,58 @@
         }
 
         .receipt .total-row {
-            font-size: 14px;
+            font-size: 16px;
         }
     }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
+<button onclick="window.print()" class="print-button">Print Receipt</button>
+
 <div class="receipt">
-    <h1>The Lone Pine</h1>
-    <p>43 Manchester Road</p>
-    <p>12480 Brisbane, Australia</p>
-    <p>617-3236-6207</p>
+    <div class="header">
+        <img src="{% static 'images/logo.png' %}" alt="Logo">
+        <h2>The Lone Pine</h2>
+        <p>43 Manchester Road</p>
+        <p>12480 Brisbane, Australia</p>
+        <p>617-3236-6207</p>
+    </div>
 
-    <p><strong>Invoice:</strong> {{ sale.code }}</p>
-    <p><strong>Date:</strong> {{ sale.date_added|date:"d/m/Y" }}</p>
-    <p><strong>Table:</strong> {{ sale.table_number }}</p>
-    <p><strong>Time:</strong> {{ sale.date_added|time:"H:i" }}</p>
+    <div class="details">
+        <p><strong>Invoice:</strong> {{ sale.code }}</p>
+        <p><strong>Date:</strong> {{ sale.date_added|date:"d/m/Y" }}</p>
+        <p><strong>Table:</strong> {{ sale.table_number }}</p>
+        <p><strong>Time:</strong> {{ sale.date_added|time:"H:i" }}</p>
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Qty</th>
-                <th>Product</th>
-                <th>Price</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in sale.salesitems_set.all %}
-            <tr>
-                <td>{{ item.qty }}</td>
-                <td>{{ item.product.product_name }}</td>
-                <td>{{ item.total }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="items">
+        <table>
+            <thead>
+                <tr>
+                    <th>Qty</th>
+                    <th>Product</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.salesitems_set.all %}
+                <tr>
+                    <td>{{ item.qty }}</td>
+                    <td>{{ item.product.product_name }}</td>
+                    <td>{{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <p><strong>Subtotal:</strong> {{ sale.sub_total }}</p>
-    <p><strong>Sales/Gov Tax (5%):</strong> {{ sale.tax_amount }}</p>
-    <p><strong>Service Charge (10%):</strong> {{ sale.service_charge }}</p>
-    <p class="total-row"><strong>GRAND TOTAL:</strong> <span class="highlight">{{ sale.grand_total }}</span></p>
+    <div class="summary">
+        <p><strong>Subtotal:</strong> {{ sale.sub_total }}</p>
+        <p><strong>Sales/Gov Tax (5%):</strong> {{ sale.tax_amount }}</p>
+        <p><strong>Service Charge (10%):</strong> {{ sale.service_charge }}</p>
+        <p class="total-row"><strong>GRAND TOTAL:</strong> <span class="highlight">{{ sale.grand_total }}</span></p>
+    </div>
 
     <div class="footer">
         <p>Thank you and see you again!</p>

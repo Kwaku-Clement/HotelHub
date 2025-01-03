@@ -42,7 +42,6 @@ def room_types_add_view(request):
             return redirect('rooms:room_types_list')
         except Exception as e:
             messages.error(request, 'There was an error during the creation!', extra_tags="danger")
-            print(e)
             return redirect('rooms:room_types_add')
 
     return render(request, "room_types_add.html", context=context)
@@ -53,7 +52,6 @@ def room_types_update_view(request, room_type_id):
         room_type = RoomType.objects.get(id=room_type_id)
     except Exception as e:
         messages.error(request, 'There was an error trying to get the room type!', extra_tags="danger")
-        print(e)
         return redirect('rooms:room_types_list')
 
     context = {
@@ -81,7 +79,6 @@ def room_types_update_view(request, room_type_id):
             return redirect('rooms:room_types_list')
         except Exception as e:
             messages.error(request, 'There was an error during the update!', extra_tags="danger")
-            print(e)
             return redirect('rooms:room_types_list')
 
     return render(request, "room_types_update.html", context=context)
@@ -95,7 +92,6 @@ def room_types_delete_view(request, room_type_id):
         return redirect('rooms:room_types_list')
     except Exception as e:
         messages.error(request, 'There was an error during the deletion!', extra_tags="danger")
-        print(e)
         return redirect('rooms:room_types_list')
 
 @login_required(login_url="/authentication/login/")
@@ -135,7 +131,6 @@ def rooms_add_view(request):
             return redirect('rooms:rooms_list')
         except Exception as e:
             messages.error(request, 'There was an error during the creation!', extra_tags="danger")
-            print(e)
             return redirect('rooms:rooms_add')
 
     return render(request, "rooms_add.html", context=context)
@@ -146,7 +141,6 @@ def rooms_update_view(request, room_id):
         room = Room.objects.get(id=room_id)
     except Exception as e:
         messages.error(request, 'There was an error trying to get the room!', extra_tags="danger")
-        print(e)
         return redirect('rooms:rooms_list')
 
     context = {
@@ -177,7 +171,6 @@ def rooms_update_view(request, room_id):
             return redirect('rooms:rooms_list')
         except Exception as e:
             messages.error(request, 'There was an error during the update!', extra_tags="danger")
-            print(e)
             return redirect('rooms:rooms_list')
 
     return render(request, "rooms_update.html", context=context)
@@ -191,7 +184,6 @@ def rooms_delete_view(request, room_id):
         return redirect('rooms:rooms_list')
     except Exception as e:
         messages.error(request, 'There was an error during the deletion!', extra_tags="danger")
-        print(e)
         return redirect('rooms:rooms_list')
 
 @login_required(login_url="/authentication/login/")

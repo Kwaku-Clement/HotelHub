@@ -10,21 +10,31 @@ from django.contrib import messages
 import json
 from decimal import Decimal
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime, timedelta
 
 def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 
-
 @login_required(login_url="authentication/login/")
 def sales_list_view(request):
-    sales = Sales.objects.all()
+    today = datetime.now().date()
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        sales = Sales.objects.filter(date_added__range=(start_date, end_date))
+    else:
+        sales = Sales.objects.filter(date_added__date=today)
+
     sale_data = []
 
     for sale in sales:
         sale_info = {
             'id': sale.id,
             'code': sale.code,
-            'client': sale.client,
+            'seller': sale.user.get_full_name(),
             'date_added': sale.date_added,
             'grand_total': sale.grand_total,
             'total_items_sold': sum(item.qty for item in sale.salesitems_set.all()),
@@ -195,3 +205,24 @@ def process_payment(request):
         "status": "error",
         "message": "Invalid request method"
     }, status=405)
+
+@login_required(login_url="authentication/login/")
+def revert_sales_view(request, sale_id):
+    sale = get_object_or_404(Sales, id=sale_id)
+
+    try:
+        with transaction.atomic():
+            # Revert each sale item
+            for item in sale.salesitems_set.all():
+                product = item.product
+                product.quantity += item.qty
+                product.save()
+
+            # Delete the sale
+            sale.delete()
+
+            messages.success(request, 'Sale reverted successfully!', extra_tags="success")
+    except Exception as e:
+        messages.error(request, f'Error reverting sale: {str(e)}', extra_tags="danger")
+
+    return redirect('sales:sales_list')

@@ -1,11 +1,11 @@
 from decimal import Decimal
 from django.db.models import Sum, QuerySet, Q
-from inventory.models import Category, Product, Purchase, Supplier, InventoryMiscellaneous
-from sales.models import Sales, SalesItems
-from reservations.models import Reservation
+from inventory.models import Category, InventoryMiscellaneous, Product, Purchase, Supplier
+from reservations.models import Reservation, Guest
 from datetime import datetime
 from typing import Dict, List, Any
 
+from sales.models import Sales, SalesItems
 
 class ReportService:
     @staticmethod
@@ -36,38 +36,31 @@ class ReportService:
         total = expenses.aggregate(total=Sum('amount'))['total']
         return float(total) if total else 0.0
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 class ReservationReportService:
     def __init__(self, start_date: datetime, end_date: datetime):
         self.start_date = start_date
         self.end_date = end_date
         self.report_service = ReportService()
-        logger.info(f"Initializing ReservationReportService for period: {start_date} - {end_date}")
 
     def get_top_reservations(self) -> List[Dict[str, Any]]:
         """Get top reservations within the period."""
         try:
             reservations = self.report_service.get_reservations_in_period(self.start_date, self.end_date)
             top_reservations = reservations.order_by('-grand_total')[:5]
-            logger.info(f"Top reservations fetched: {top_reservations.count()} records")
             return [
                 {
                     'reservation_id': reservation.id,
-                    'guest_name': reservation.guest.get_full_name,
+                    'guest': reservation.guest,  # Include the guest object
+                    'guest_name': reservation.guest.get_full_name(),
                     'grand_total': float(reservation.grand_total)
                 }
                 for reservation in top_reservations
             ]
         except Exception as e:
-            logger.error(f"Error fetching top reservations: {e}")
             return []
 
     def get_top_guests(self) -> List[Dict[str, Any]]:
         """Get top guests by total reservation amount within the period."""
-        from reservations.models import Guest
         try:
             top_guests = Guest.objects.annotate(
                 total_reservations=Sum(
@@ -75,16 +68,15 @@ class ReservationReportService:
                     filter=Q(reservation__reservation_date__range=[self.start_date, self.end_date])
                 )
             ).order_by('-total_reservations')[:5]
-            logger.info(f"Top guests fetched: {top_guests.count()} records")
             return [
                 {
-                    'guest_name': guest.get_full_name,
+                    'guest': guest,  # Include the guest object
+                    'guest_name': guest.get_full_name(),
                     'total_reservations': float(guest.total_reservations or 0.0)
                 }
                 for guest in top_guests
             ]
         except Exception as e:
-            logger.error(f"Error fetching top guests: {e}")
             return []
 
     def generate_report(self) -> Dict[str, Any]:
@@ -93,9 +85,6 @@ class ReservationReportService:
             reservations = self.report_service.get_reservations_in_period(self.start_date, self.end_date)
             total_reservation_revenue = self.report_service.calculate_total_amount(reservations, 'grand_total')
             total_miscellaneous = self.report_service.get_miscellaneous_expenses(self.start_date, self.end_date)
-
-            logger.info(f"Report generated with total revenue: {total_reservation_revenue}, "
-                        f"total miscellaneous: {total_miscellaneous}")
 
             return {
                 'total_reservation_revenue': total_reservation_revenue,
@@ -106,7 +95,6 @@ class ReservationReportService:
                 'top_guests': self.get_top_guests()
             }
         except Exception as e:
-            logger.error(f"Error generating report: {e}")
             return {}
 
 class StoreReportService:

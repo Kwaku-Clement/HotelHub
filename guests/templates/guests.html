@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% load static %}
-<!-- Page title  -->
+
+<!-- Page title -->
 {% block title %}Guests{% endblock title %}
 
-<!-- Specific Page CSS goes HERE  -->
+<!-- Specific Page CSS goes HERE -->
 {% block stylesheets %}
 <!-- Datatables -->
-<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css ' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css ' %}" rel="stylesheet">
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <style>
     .card-header .row {
         align-items: center;
@@ -21,15 +22,15 @@
 </style>
 {% endblock stylesheets %}
 
-<!-- Page content  -->
+<!-- Page content -->
 {% block content %}
 <div class="container-fluid">
     <!--Create new guest-->
     <div class="row ml-0 mb-3">
         <a href="{% url 'guests:guests_add' %}">
             <button type="button" class="btn btn-dark font-weight-bold">
-                    <i class="fas fa-plus mr-2"></i>
-                    Register New Guest
+                <i class="fas fa-plus mr-2"></i>
+                Register New Guest
             </button>
         </a>
     </div>
@@ -37,8 +38,27 @@
     <!-- DataTable -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Guests</h6>
-            <input type="text" class="form-control" id="guestSearch" placeholder="Search Guests">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Guests</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-2">
+                            <button id="filterDate" class="btn btn-primary">Filter</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="guestSearch" placeholder="Search Guests">
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -50,7 +70,7 @@
                             <th style="width:20%">Name</th>
                             <th style="width:25%">ID Number</th>
                             <th style="width:15%">Phone</th>
-                            <th style="width:25%">Adress</th>
+                            <th style="width:25%">Address</th>
                             <th class="text-center" style="width:10%">Actions</th>
                         </tr>
                     </thead>
@@ -81,23 +101,23 @@
                                 <!-- Modal -->
                                 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="exampleModalLabel">Delete guest</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">Delete guest</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div id="updateThisText" class="modal-body">
+                                                Are you sure you want to delete the guest: {{g.name}}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                <a id="updateThisURL" href="{% url 'guests:guests_delete' g.id %}" class="text-decoration-none">
+                                                    <button type="button" class="btn btn-danger">Delete</button>
+                                                </a>
+                                            </div>
                                         </div>
-                                        <div id="updateThisText" class="modal-body">
-                                            Are you sure you want to delete the guest: {{g.name}}
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                            <a id="updateThisURL" href="{% url 'guests:guests_delete' g.id %}" class="text-decoration-none">
-                                                <button type="button"  class="btn btn-danger">Delete</button>
-                                            </a>
-                                        </div>
-                                    </div>
                                     </div>
                                 </div>
                             </td>
@@ -111,7 +131,7 @@
 </div>
 {% endblock content %}
 
-<!-- Specific Page JS goes HERE  -->
+<!-- Specific Page JS goes HERE -->
 {% block javascripts %}
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
@@ -228,6 +248,15 @@
         //Custom Search input
         $('#guestSearch').on('keyup', function () {
             tblGuests.search(this.value).draw();
+        });
+
+        // Filter date button
+        $('#filterDate').on('click', function() {
+            var start_date = $('#startDate').val();
+            var end_date = $('#endDate').val();
+            if(start_date && end_date) {
+                window.location.href = `?start_date=${start_date}&end_date=${end_date}`;
+            }
         });
     });
 
