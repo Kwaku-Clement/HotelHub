@@ -13,7 +13,13 @@ class ActivityLoggerMiddleware:
             details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
             ip_address = request.META.get('REMOTE_ADDR')
             mac_address = self.get_mac_address()
-            ActivityLog.objects.create(user=request.user, action=action, details=details, ip_address=ip_address, mac_address=mac_address)
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
         return response
 
     def get_mac_address(self):

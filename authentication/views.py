@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import LoginForm, ChangePasswordForm, UserRegistrationForm
@@ -41,7 +41,9 @@ def register_user(request):
     if request.method == "POST":
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+            user.role = form.cleaned_data.get('role')
+            user.save()
             messages.success(request, f'User {form.cleaned_data["first_name"]} {form.cleaned_data["last_name"]} created successfully', extra_tags="success")
             return redirect('authentication:users_list')
         else:

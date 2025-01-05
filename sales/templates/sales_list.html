@@ -1,11 +1,14 @@
+<!-- sales_list.html -->
 {% extends "base.html" %}
 {% load static %}
 
+{% block title %}Sales List{% endblock title %}
+
 {% block stylesheets %}
 <!-- Datatables -->
+<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 <link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
 <link href="{% static 'vendor/datatables/buttons.bootstrap4.min.css' %}" rel="stylesheet">
-<link href="{% static 'css/pagination_buttons.css' %}" rel="stylesheet">
 
 <style>
     .card-header .row {
@@ -20,6 +23,7 @@
     .date-filter {
         display: flex;
         gap: 10px;
+        align-items: center;
     }
     .dt-buttons {
         margin-bottom: 15px;
@@ -30,79 +34,96 @@
     .dataTables_filter {
         float: right;
     }
+    .mdc-card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
-
 <div class="container-fluid">
-
-    <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
-        <div class="mdc-card py-2">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">Point of Sale</h4>
-            </div>
+    <!-- Page Title -->
+    <div class="mdc-card py-2 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Sales Records</h4>
         </div>
     </div>
 
+    <!-- Action Buttons -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'sales:create_sales' %}" class="btn btn-dark">
-            + Make Sales
+        <a href="{% url 'sales:manage_sales' %}" class="btn btn-primary">
+            <i class="mdi mdi-plus"></i> New Sale
         </a>
     </div>
 
+    <!-- Sales List Card -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Sales</h6>
-            <div class="date-filter">
-                <input type="text" class="form-control" id="startDate" placeholder="Start Date">
-                <input type="text" class="form-control" id="endDate" placeholder="End Date">
-                <button class="btn btn-primary" id="filterButton">Filter</button>
+        <div class="card-header py-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6 class="m-0 font-weight-bold text-primary">Sales History</h6>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-end">
+                        <div class="date-filter">
+                            <input type="date" class="form-control" id="startDate" placeholder="Start Date">
+                            <input type="date" class="form-control" id="endDate" placeholder="End Date">
+                            <button class="btn btn-primary" id="filterButton">Filter</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <input type="text" class="form-control" id="salesSearch" placeholder="Search Sales">
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
-                    <thead class="thead-light">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
                         <tr>
-                            <th class="text-center py-1">Code</th>
-                            <th class="text-center py-1">Seller</th>
-                            <th class="text-center py-1">Date and Time</th>
-                            <th class="text-center py-1">Products</th>
-                            <th class="text-center py-1">Grand Total</th>
-                            <th class="text-center py-1">Total Items</th>
-                            <th class="text-center py-1">Receipt</th>
-                            <th class="text-center py-1">Actions</th>
+                            <th>Code</th>
+                            {% if is_admin_or_manager %}
+                            <th>Seller</th>
+                            {% endif %}
+                            <th>Date & Time</th>
+                            <th>Products</th>
+                            <th>Total Items</th>
+                            <th>Grand Total</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for sale in sale_data %}
                         <tr>
-                            <td class="px-2 py-1 text-center">{{ sale.code }}</td>
-                            <td class="px-2 py-1 text-center">{{ user.username }}</td>
-                            <td class="px-2 py-1 text-center">{{ sale.date_added|date:'d-m-Y H:i' }}</td>
-                            <td class="px-2 py-1">
-                                {% if sale.products_list %}
-                                    {% for product, quantity in sale.products_list.items %}
-                                        {{ product|capfirst }} - {{ quantity }}<br>
-                                    {% endfor %}
-                                {% endif %}
+                            <td>{{ sale.code }}</td>
+                            {% if is_admin_or_manager %}
+                            <td>{{ sale.seller }}</td>
+                            {% endif %}
+                            <td>{{ sale.date_added|date:"d-m-Y H:i" }}</td>
+                            <td>
+                                {% for product, quantity in sale.products_list.items %}
+                                    {{ product }} ({{ quantity }})<br>
+                                {% endfor %}
                             </td>
-                            <td class="px-2 py-1 text-right">{{ sale.grand_total|floatformat:2 }}</td>
-                            <td class="px-2 py-1 text-center">{{ sale.total_items_sold }}</td>
-                            <td class="px-2 py-1 text-center">
-                                {% if perms.sales.view_sales %}
-                                <a href="{% url 'sales:receipt' sale.id %}" class="btn btn-primary btn-sm">View Receipt</a>
-                                {% endif %}
-                            </td>
-                            <td class="px-2 py-1 text-center">
-                                {% if perms.sales.change_sales %}
-                                <a href="{% url 'sales:update_sales' sale.id %}" class="btn btn-warning btn-sm">Edit</a>
-                                {% endif %}
-                                {% if perms.sales.delete_sales %}
-                                <a href="{% url 'sales:delete_sales' sale.id %}" class="btn btn-danger btn-sm">Delete</a>
-                                {% endif %}
+                            <td class="text-center">{{ sale.total_items_sold }}</td>
+                            <td class="text-right">{{ sale.grand_total|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'sales:receipt' sale.id %}" 
+                                       class="btn btn-info btn-sm" 
+                                       title="View Receipt">
+                                        <i class="mdi mdi-receipt"></i>
+                                    </a>
+                                    <a href="{% url 'sales:manage_sales' sale.id %}" 
+                                       class="btn btn-warning btn-sm" 
+                                       title="Edit Sale">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'sales:delete_sales' sale.id %}" 
+                                       class="btn btn-danger btn-sm delete-sale" 
+                                       title="Delete Sale">
+                                        <i class="mdi mdi-delete"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -111,7 +132,6 @@
             </div>
         </div>
     </div>
-
 </div>
 {% endblock content %}
 
@@ -119,84 +139,73 @@
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
-<!--Datatable buttons-->
 <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
-<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
-<!--Moment JS-->
-<script src="{% static 'vendor/moment/moment.min.js' %}"></script>
+<script src="{% static 'assets/sweetalert2/sweetalert2@11.js' %}"></script>
 
 <script>
-    $(document).ready(function() {
-        tblRooms = $('#dataTable').DataTable({
-            dom: 'Brtip',
-            buttons: [
-                {
-                    extend: 'print',
-                    text: '<i class="fas fa-print"></i> Print',
-                    titleAttr: 'Print',
-                    className: 'btn btn-info btn-sm',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5]
-                    }
-                },
-                {
-                    extend: 'excelHtml5',
-                    text: '<i class="fas fa-file-excel"></i> Excel',
-                    titleAttr: 'Excel',
-                    className: 'btn btn-success btn-sm',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5]
-                    }
-                },
-                {
-                    extend: 'pdfHtml5',
-                    text: '<i class="fas fa-file-pdf"></i> PDF',
-                    titleAttr: 'PDF',
-                    className: 'btn btn-danger btn-sm',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5]
-                    },
-                    customize: function (doc) {
-                        doc.content[1].table.widths = 
-                            Array(doc.content[1].table.body[0].length + 1).join('*').split('');
-                        doc.styles.tableHeader = {
-                            color: 'white',
-                            background: '#2d4154',
-                            alignment: 'center',
-                            fontSize: 11,
-                            bold: true
-                        };
-                        doc.styles.tableBodyEven = {
-                            background: '#f2f2f2'
-                        };
-                        doc.styles.tableBodyOdd = {
-                            background: '#ffffff'
-                        };
-                    }
-                }
-            ],
-            columnDefs: [
-                { targets: [-1], orderable: false }
-            ]
-        });
+$(document).ready(function() {
+    // Initialize DataTable
+    const table = $('#dataTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'print',
+                text: '<i class="mdi mdi-printer"></i> Print',
+                className: 'btn btn-info btn-sm'
+            },
+            {
+                extend: 'excel',
+                text: '<i class="mdi mdi-file-excel"></i> Excel',
+                className: 'btn btn-success btn-sm'
+            },
+            {
+                extend: 'pdf',
+                text: '<i class="mdi mdi-file-pdf"></i> PDF',
+                className: 'btn btn-danger btn-sm'
+            }
+        ],
+        order: [[2, 'desc']], // Sort by date column descending
+        pageLength: 25
+    });
 
-        // Custom search input
-        $('#salesSearch').on('keyup', function() {
-            tblRooms.search(this.value).draw();
-        });
+    // Date filter functionality
+    $('#filterButton').click(function() {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        
+        if (startDate && endDate) {
+            window.location.href = `?start_date=${startDate}&end_date=${endDate}`;
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Dates',
+                text: 'Please select both start and end dates.'
+            });
+        }
+    });
 
-        // Date filter button
-        $('#filterButton').on('click', function() {
-            var startDate = $('#startDate').val();
-            var endDate = $('#endDate').val();
-            window.location.href = "{% url 'sales:sales_list' %}?start_date=" + startDate + "&end_date=" + endDate;
+    // Delete confirmation
+    $('.delete-sale').click(function(e) {
+        e.preventDefault();
+        const deleteUrl = $(this).attr('href');
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This sale will be permanently deleted!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = deleteUrl;
+            }
         });
     });
+});
 </script>
 {% endblock javascripts %}
-

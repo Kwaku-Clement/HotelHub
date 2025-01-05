@@ -3,6 +3,8 @@ from datetime import date, datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import render
+from activitylog.models import ActivityLog
+from activitylog.views import get_mac_address
 from miscellaneous.models import Miscellaneous
 from reservations.models import Reservation, ReservationDetail
 from rooms.models import Room, RoomType
@@ -10,7 +12,6 @@ from django.utils import timezone
 from sales.models import Sales, SalesItems
 from django.db.models import Count, Sum, F, Q, Avg, Value, DecimalField, IntegerField
 from decimal import Decimal
-
 
 @login_required(login_url="/authentication/login/")
 def index(request):
@@ -75,6 +76,21 @@ def index(request):
         'period_2_miscellaneous': json.dumps(period_2_miscellaneous),
         'active_icon': 'index'
     }
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed index page"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, 'index.html', context)
 
 @login_required(login_url="/authentication/login/")
@@ -140,6 +156,20 @@ def dashboard(request):
         'period_2_miscellaneous': json.dumps(period_2_miscellaneous, default=float),
         'active_icon': 'dashboard'
     }
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed dashboard"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
 
     return render(request, 'dashboard.html', context)
 
