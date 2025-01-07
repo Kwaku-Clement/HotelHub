@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from activitylog.models import ActivityLog
+from activitylog.views import get_mac_address
 from miscellaneous.models import Miscellaneous
 from .forms import MiscellaneousForm
 from django.http import JsonResponse
@@ -33,6 +35,21 @@ def miscellaneous_list_view(request):
         "end_date": end_date,
         "search_term": search_term,
     }
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed miscellaneous list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, "miscellaneous_list.html", context=context)
 
 @login_required(login_url="/authentication/login/")
@@ -57,6 +74,20 @@ def miscellaneous_add_create_view(request, miscellaneous_id=None):
             miscellaneous.date = timezone.now()  # Automatically set the date to the current date and time
         miscellaneous.save()
         messages.success(request, success_message, extra_tags="success")
+
+        # Log activity
+        action = f"{'Updated' if miscellaneous_id else 'Created'} miscellaneous expense: {miscellaneous.type}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
         return redirect('miscellaneous:miscellaneous_list')
 
     elif request.method == 'POST':
@@ -65,11 +96,25 @@ def miscellaneous_add_create_view(request, miscellaneous_id=None):
     context["form"] = form
     return render(request, "miscellaneous_add.html", context=context)
 
-@csrf_exempt
 @login_required(login_url="/authentication/login/")
+@csrf_exempt
 def miscellaneous_delete_view(request, miscellaneous_id):
     if request.method == 'POST':
         miscellaneous = get_object_or_404(Miscellaneous, id=miscellaneous_id)
         miscellaneous.delete()
+
+        # Log activity
+        action = f"Deleted miscellaneous expense: {miscellaneous.type}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
         return JsonResponse({'status': 'success', 'msg': 'Miscellaneous expense deleted successfully!'})
     return JsonResponse({'status': 'error', 'msg': 'Invalid request method.'})

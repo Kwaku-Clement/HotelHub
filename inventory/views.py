@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 from django.http import HttpRequest, HttpResponse, JsonResponse
+
+from activitylog.models import ActivityLog
+from activitylog.views import get_mac_address
 from .models import Category, InventoryMiscellaneous, Product, Supplier,  Purchase, SupplierProduct
 from .forms import InventoryMiscellaneousForm, SupplierForm, PurchaseForm, CategoryForm, ProductForm, SupplierProductForm
 from .utils import save_form_with_transaction, handle_error, handle_success, delete_instance_with_error_handling
@@ -21,12 +24,96 @@ def home_view(request):
 
 @login_required(login_url="/authentication/login/")
 def categories_list_view(request):
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed categories list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     try:
         categories = Category.objects.all()
         return render(request, "category_list.html", {"categories": categories})
     except Exception as e:
         handle_error(request, f"Error loading categories: {str(e)}")
         return redirect('inventory:category_create_update')
+
+@login_required(login_url="/authentication/login/")
+def products_list_view(request):
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed products list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
+    try:
+        products = Product.objects.all()
+        return render(request, "product_list.html", {"products": products})
+    except Exception as e:
+        handle_error(request, f"Error loading products: {str(e)}")
+        return redirect('inventory:product_create_update')
+
+@login_required(login_url="/authentication/login/")
+def supplier_list(request):
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed suppliers list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
+    try:
+        suppliers = Supplier.objects.all()
+        return render(request, "supplier_list.html", {"suppliers": suppliers})
+    except Exception as e:
+        handle_error(request, f"Error loading suppliers: {str(e)}")
+        return redirect('inventory:supplier_create_update')
+
+@login_required(login_url="/authentication/login/")
+def purchase_list(request):
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed purchases list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
+    try:
+        purchases = Purchase.objects.all()
+        return render(request, "purchase_list.html", {"purchases": purchases})
+    except Exception as e:
+        handle_error(request, f"Error loading purchases: {str(e)}")
+        return redirect('inventory:purchase_create_update')
+
 
 @login_required(login_url="/authentication/login/")
 def category_create_update(request, category_id=None):
@@ -44,8 +131,22 @@ def category_create_update(request, category_id=None):
             if error:
                 handle_error(request, error)
                 return redirect('inventory:category_create_update', category_id=category.id if category else None)
-            
+
             handle_success(request, f"Category '{category.name}' saved successfully!")
+
+            # Log activity
+            action = f"{'Updated' if category_id else 'Created'} category: {category.name}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
             return redirect('inventory:category_list')
         else:
             handle_error(request, 'Invalid form submission!')
@@ -61,15 +162,30 @@ def category_create_update(request, category_id=None):
     }
     return render(request, "category_create_update.html", context=context)
 
+
 @login_required(login_url="/authentication/login/")
 def categories_delete_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     delete_instance_with_error_handling(
-        request, 
-        category, 
-        success_message=f'Category: {category.name} deleted!', 
+        request,
+        category,
+        success_message=f'Category: {category.name} deleted!',
         failure_message='Error deleting category'
     )
+
+    # Log activity
+    action = f"Deleted category: {category.name}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('inventory:category_list')
 
 @login_required(login_url="/authentication/login/")
@@ -80,6 +196,20 @@ def products_list_view(request):
     except Exception as e:
         handle_error(request, f"Error loading products: {str(e)}")
         return redirect('inventory:product_create_update')
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed products list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
 
 @login_required(login_url="/authentication/login/")
 def product_create_update(request, product_id=None):
@@ -99,6 +229,20 @@ def product_create_update(request, product_id=None):
                 return redirect('inventory:product_create_update', product_id=product.id if product else None)
 
             handle_success(request, f'Product: {product.product_name} saved successfully!')
+
+            # Log activity
+            action = f"{'Updated' if product_id else 'Created'} product: {product.product_name}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
             return redirect('inventory:product_list')
         else:
             handle_error(request, 'Invalid form submission!')
@@ -119,11 +263,25 @@ def product_create_update(request, product_id=None):
 def products_delete_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     delete_instance_with_error_handling(
-        request, 
-        product, 
-        success_message=f'Product: {product.product_name} deleted!', 
+        request,
+        product,
+        success_message=f'Product: {product.product_name} deleted!',
         failure_message='Error deleting product'
     )
+
+    # Log activity
+    action = f"Deleted product: {product.product_name}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('inventory:product_list')
 
 @login_required(login_url="/authentication/login/")
@@ -135,19 +293,27 @@ def supplier_list(request):
         handle_error(request, f"Error loading suppliers: {str(e)}")
         return redirect('inventory:supplier_create_update')
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db import transaction
-from django.forms import modelformset_factory
-from .models import Supplier, SupplierProduct
-from .forms import SupplierForm, SupplierProductForm
-from .utils import handle_success, handle_error
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed suppliers list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
 
 @login_required(login_url="/authentication/login/")
 def supplier_create_update(request, pk=None):
     SupplierProductFormSet = modelformset_factory(
-        SupplierProduct, 
-        form=SupplierProductForm, 
-        extra=1, 
+        SupplierProduct,
+        form=SupplierProductForm,
+        extra=1,
         can_delete=True
     )
 
@@ -209,6 +375,20 @@ def supplier_create_update(request, pk=None):
                                 product.save()
 
                 handle_success(request, f'Supplier {supplier.supplier_name} and products updated successfully.')
+
+                # Log activity
+                action = f"{'Updated' if pk else 'Created'} supplier: {supplier.supplier_name}"
+                details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+                ip_address = request.META.get('REMOTE_ADDR')
+                mac_address = get_mac_address()
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=action,
+                    details=details,
+                    ip_address=ip_address,
+                    mac_address=mac_address
+                )
+
                 return redirect('inventory:supplier_list')
 
             except Exception as e:
@@ -225,15 +405,30 @@ def supplier_create_update(request, pk=None):
         'product_formset': product_formset,
         'title': title
     })
-    
+  
+@login_required(login_url="/authentication/login/")
 def supplier_delete(request, pk):
     supplier = get_object_or_404(Supplier, pk=pk)
-    
+
     if supplier.supplier_products.exists() or supplier.purchases.exists():
         handle_error(request, "Cannot delete supplier because it has associated products or purchases.")
         return redirect('inventory:supplier_list')
 
     supplier.delete()
+
+    # Log activity
+    action = f"Deleted supplier: {supplier.supplier_name}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('inventory:supplier_list')
 
 @login_required(login_url="/authentication/login/")
@@ -245,6 +440,19 @@ def purchase_list(request):
         handle_error(request, f"Error loading purchases: {str(e)}")
         return redirect('inventory:purchase_create_update')
 
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed purchases list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
 
 @login_required(login_url="/authentication/login/")
 def purchase_create_update(request, pk=None):
@@ -261,6 +469,20 @@ def purchase_create_update(request, pk=None):
             try:
                 purchase = form.save()
                 messages.success(request, 'Purchase saved successfully.')
+
+                # Log activity
+                action = f"{'Updated' if pk else 'Created'} purchase: {purchase.id}"
+                details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+                ip_address = request.META.get('REMOTE_ADDR')
+                mac_address = get_mac_address()
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=action,
+                    details=details,
+                    ip_address=ip_address,
+                    mac_address=mac_address
+                )
+
                 return redirect('inventory:purchase_list')
             except ValidationError as e:
                 messages.error(request, str(e))
@@ -278,11 +500,25 @@ def purchase_create_update(request, pk=None):
 def purchase_delete(request, pk):
     purchase = get_object_or_404(Purchase, pk=pk)
     delete_instance_with_error_handling(
-        request, 
-        purchase, 
+        request,
+        purchase,
         success_message='Purchase deleted successfully.',
         failure_message='Error deleting purchase'
     )
+
+    # Log activity
+    action = f"Deleted purchase: {purchase.id}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('inventory:purchase_list')
 
 
@@ -291,7 +527,7 @@ def get_supplier_products(request, supplier_id):
     # Check if request is AJAX
     if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
-    
+
     products = SupplierProduct.objects.filter(supplier_id=supplier_id)
     data = [{
         'id': product.id,
@@ -299,7 +535,20 @@ def get_supplier_products(request, supplier_id):
         'price': str(product.price),
         'quantity': product.quantity
     } for product in products]
-    
+
+    # Log activity
+    action = f"Fetched supplier products for supplier_id: {supplier_id}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return JsonResponse(data, safe=False)
 
 @login_required(login_url="/authentication/login/")
@@ -307,7 +556,7 @@ def get_supplier_product_details(request, product_id):
     # Check if request is AJAX
     if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
-    
+
     try:
         product = SupplierProduct.objects.get(id=product_id)
         data = {
@@ -317,10 +566,24 @@ def get_supplier_product_details(request, product_id):
             'price': str(product.price),
             'quantity': product.quantity
         }
+
+        # Log activity
+        action = f"Fetched supplier product details for product_id: {product_id}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
         return JsonResponse(data)
     except SupplierProduct.DoesNotExist:
         return JsonResponse({'error': 'Product not found'}, status=404)
-    
+ 
     
 @login_required(login_url="/authentication/login/")
 def miscellaneous_create_update(request: HttpRequest, misc_id=None) -> HttpResponse:
@@ -339,6 +602,20 @@ def miscellaneous_create_update(request: HttpRequest, misc_id=None) -> HttpRespo
                 handle_error(request, error)
                 return redirect('inventory:miscellaneous_create_update', misc_id=miscellaneous.id if miscellaneous else None)
             handle_success(request, f"Miscellaneous '{miscellaneous.title}' saved successfully!")
+
+            # Log activity
+            action = f"{'Updated' if misc_id else 'Created'} miscellaneous: {miscellaneous.title}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
             return redirect('inventory:inventory_miscellaneous_list')
         else:
             handle_error(request, "Invalid form submission!")
@@ -354,7 +631,6 @@ def miscellaneous_create_update(request: HttpRequest, misc_id=None) -> HttpRespo
 
     return render(request, 'miscellaneous_create_update.html', context)
 
-
 @login_required(login_url="/authentication/login/")
 def inventory_miscellaneous_list(request):
     start_date = request.GET.get('start_date')
@@ -367,10 +643,24 @@ def inventory_miscellaneous_list(request):
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
             miscellaneous = miscellaneous.filter(date__range=(start_date, end_date))
         return render(request, "inventory_miscellaneous_list.html", {"miscellaneous": miscellaneous})
-    
+
     except Exception as e:
         handle_error(request, f"Error loading miscellaneous: {str(e)}")
         return redirect('inventory:miscellaneous_create_update')
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed inventory miscellaneous list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
 
 
 @login_required(login_url="/authentication/login/")
@@ -380,4 +670,18 @@ def miscellaneous_delete_view(request, misc_id):
         request, miscellaneous, success_message=f"Miscellaneous: {miscellaneous.type} deleted!",
         failure_message='Error occurred while deleting Miscellaneous'
     )
+
+    # Log activity
+    action = f"Deleted miscellaneous: {miscellaneous.type}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('inventory:inventory_miscellaneous_list')

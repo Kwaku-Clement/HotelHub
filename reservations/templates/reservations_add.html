@@ -1,7 +1,8 @@
-{% extends "base.html" %} {% load static %}
+{% extends "base.html" %}
+{% load static %}
 
 <!-- Page title  -->
-{% block title %}Add reservation{% endblock title %}
+{% block title %}{% if reservation %}Edit{% else %}Add{% endif %} Reservation{% endblock title %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}
@@ -17,7 +18,7 @@ rel="stylesheet"
 />
 <link
   rel="stylesheet"
-  href="{%static 'assets/select2/select2-bootstrap4.min.css' %}"
+  href="{% static 'assets/select2/select2-bootstrap4.min.css' %}"
 />
 <!-- Bootstrap Touchspin -->
 <link
@@ -151,6 +152,7 @@ rel="stylesheet"
                           class="form-control"
                           id="check_in"
                           required
+                          {% if reservation %}value="{{ reservation.check_in|date:'Y-m-d' }}"{% endif %}
                         />
                       </div>
                     </div>
@@ -163,6 +165,7 @@ rel="stylesheet"
                           class="form-control"
                           id="check_out"
                           required
+                          {% if reservation %}value="{{ reservation.check_out|date:'Y-m-d' }}"{% endif %}
                         />
                       </div>
                     </div>
@@ -184,7 +187,24 @@ rel="stylesheet"
                           <th class="text-center">Delete</th>
                         </tr>
                       </thead>
-                      <tbody></tbody>
+                      <tbody>
+                        {% if reservation_details %}
+                          {% for detail in reservation_details %}
+                            <tr>
+                              <td>{{ detail.room.id }}</td>
+                              <td>{{ detail.room.name }}</td>
+                              <td>{{ detail.price }}</td>
+                              <td>{{ detail.days }}</td>
+                              <td>{{ detail.total_detail }}</td>
+                              <td class="text-center">
+                                <a rel="delete" type="button" class="btn btn-sm btn-danger delete-room" data-bs-toggle="tooltip" title="Delete room">
+                                  <i class="fas fa-trash-alt fa-xs"></i>
+                                </a>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        {% endif %}
+                      </tbody>
                     </table>
                   </div>
                 </div>
@@ -208,7 +228,7 @@ rel="stylesheet"
                         Select the guest
                       </option>
                       {% for guest in guests %}
-                      <option value="{{ guest.value }}">
+                      <option value="{{ guest.value }}" {% if reservation and reservation.guest.id == guest.value %}selected{% endif %}>
                         {{ guest.label }}
                       </option>
                       {% endfor %}
@@ -217,7 +237,7 @@ rel="stylesheet"
                   <div class="form-group mt-4">
                     <label>Subtotal</label>
                     <div class="input-group">
-                      <input name="sub_total" class="form-control" required />
+                      <input name="sub_total" class="form-control" required {% if reservation %}value="{{ reservation.sub_total }}"{% endif %} />
                     </div>
                   </div>
                   <div class="form-group">
@@ -226,7 +246,7 @@ rel="stylesheet"
                       <input
                         name="tax_percentage"
                         class="form-control"
-                        value="0"
+                        value="{% if reservation %}{{ reservation.tax_percentage }}{% else %}0{% endif %}"
                         required
                       />
                     </div>
@@ -234,22 +254,23 @@ rel="stylesheet"
                   <div class="form-group">
                     <label>Tax Amount</label>
                     <div class="input-group">
-                      <input name="tax_amount" class="form-control" required />
+                      <input name="tax_amount" class="form-control" required {% if reservation %}value="{{ reservation.tax_amount }}"{% endif %} />
                     </div>
                   </div>
                   <div class="form-group">
                     <label>Grand Total</label>
                     <div class="input-group">
-                      <input name="grand_total" class="form-control" required />
+                      <input name="grand_total" class="form-control" required {% if reservation %}value="{{ reservation.grand_total }}"{% endif %} />
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Amount payed</label>
+                    <label>Amount Payed</label>
                     <div class="input-group">
                       <input
                         name="amount_payed"
                         class="form-control"
                         required
+                        {% if reservation %}value="{{ reservation.amount_payed }}"{% endif %}
                       />
                     </div>
                   </div>
@@ -257,7 +278,11 @@ rel="stylesheet"
                     type="submit"
                     class="btn btn-success font-weight-bold"
                   >
-                    Create reservation
+                    {% if reservation %}
+                      Update Reservation
+                    {% else %}
+                      Create Reservation
+                    {% endif %}
                   </button>
                 </div>
               </div>
@@ -275,15 +300,17 @@ rel="stylesheet"
 <!-- Datatables -->
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
- <script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+<script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
 <!-- Select2 -->
-<script src="{%static 'assets/select2/select2.min.js' %}" defer></script>
+<script src="{% static 'assets/select2/select2.min.js' %}" defer></script>
 <!-- Bootstrap Touchspin -->
 <script src="{% static 'assets/bootstrap-touchspin-master/jquery.bootstrap-touchspin.js' %}"></script>
 <!-- Sweet Alert -->
 <script src="{% static 'assets/sweetalert2/sweetalert2.all.min.js' %}"></script>
 
 <script>
+// Reservation Management Application
+
 // Round number to specified decimal places
 function roundTo(n, digits) {
   if (digits === undefined) {
@@ -314,7 +341,7 @@ var reservation = {
     grand_total: 0.0,
     tax_amount: 0.0,
     tax_percentage: 0.0,
-    amount_payed: 0.0,
+    amount_paid: 0.0,
     amount_change: 0.0,
     check_in: "",
     check_out: "",
@@ -363,21 +390,21 @@ var reservation = {
         ],
         columnDefs: [
           {
-            class: "text-center",
+            className: "text-center",
             targets: [3],
             render: function (data, type, row) {
               return '<input name="days" type="text" class="form-control form-control-xs text-center input-sm" autocomplete="off" value="' + row.days + '" readonly>';
             },
           },
           {
-            class: "text-right",
+            className: "text-right",
             targets: [2, 4],
             render: function (data, type, row) {
-              return parseFloat(data).toFixed(2) + "Ȼ";
+              return parseFloat(data).toFixed(2) + " Ȼ";
             },
           },
           {
-            class: "text-center",
+            className: "text-center",
             targets: [-1],
             orderable: false,
             render: function (data, type, row) {
@@ -501,7 +528,7 @@ $(document).ready(function () {
     var check_out = new Date($('#check_out').val() + 'T00:00:00');
     var currentDate = new Date();
     currentDate.setHours(0,0,0,0);
-    
+
     if (check_in.getTime() < currentDate.getTime() - 86400000) {
       Swal.fire({
         title: "Invalid Date",
@@ -534,6 +561,34 @@ $(document).ready(function () {
     reservation.list_room();
   });
 
+  // Initialize reservation data if editing
+  {% if reservation %}
+  reservation.items.guest = {{ reservation.guest.id }};
+  reservation.items.sub_total = {{ reservation.sub_total }};
+  reservation.items.grand_total = {{ reservation.grand_total }};
+  reservation.items.tax_amount = {{ reservation.tax_amount }};
+  reservation.items.tax_percentage = {{ reservation.tax_percentage }};
+  reservation.items.amount_paid = {{ reservation.amount_paid }};
+  reservation.items.amount_change = {{ reservation.amount_change }};
+  reservation.items.check_in = "{{ reservation.check_in|date:'Y-m-d' }}";
+  reservation.items.check_out = "{{ reservation.check_out|date:'Y-m-d' }}";
+
+  // Initialize rooms
+  {% for detail in reservation_details %}
+  reservation.items.rooms.push({
+    id: {{ detail.room.id }},
+    name: "{{ detail.room.name }}",
+    price: {{ detail.price }},
+    days: {{ detail.days }},
+    total_room: {{ detail.total_detail }},
+    number: number++
+  });
+  {% endfor %}
+
+  // Update the rooms table
+  reservation.list_room();
+  {% endif %}
+
   // Form submission
   $("form.reservationForm").on("submit", function (e) {
     e.preventDefault();
@@ -561,10 +616,10 @@ $(document).ready(function () {
       return false;
     }
 
-    var amountPayed = parseFloat($('[name="amount_payed"]').val()) || 0;
+    var amountPaid = parseFloat($('[name="amount_paid"]').val()) || 0;
     var grandTotal = parseFloat($('[name="grand_total"]').val()) || 0;
 
-    if (amountPayed < grandTotal) {
+    if (amountPaid < grandTotal) {
       Swal.fire({
         title: "Payable Amount is lower than the Grand Total",
         icon: "warning"
@@ -578,8 +633,8 @@ $(document).ready(function () {
       grand_total: $('input[name="grand_total"]').val(),
       tax_amount: $('input[name="tax_amount"]').val(),
       tax_percentage: $('input[name="tax_percentage"]').val(),
-      amount_payed: $('input[name="amount_payed"]').val(),
-      amount_change: roundTo(amountPayed - grandTotal, 2),
+      amount_paid: $('input[name="amount_paid"]').val(),
+      amount_change: roundTo(amountPaid - grandTotal, 2),
       reservation_date: new Date().toISOString().split('T')[0],
       check_in: $('input[name="check_in"]').val(),
       check_out: $('input[name="check_out"]').val(),
@@ -597,26 +652,26 @@ $(document).ready(function () {
       success: function (response) {
         if (response.status === "success") {
           Swal.fire({
-            title: "Reservation created successfully!",
+            title: "Reservation {% if reservation %}updated{% else %}created{% endif %} successfully!",
             icon: "success"
           }).then(() => {
-            window.location.href = window.location.pathname.replace("add", "list");
+            window.location.href = "{% url 'reservations:reservations_list' %}";
           });
         } else {
           Swal.fire({
-            title: "Error creating reservation",
+            title: "Error {% if reservation %}updating{% else %}creating{% endif %} reservation",
             text: response.message,
             icon: "error"
           });
         }
       },
       error: function (xhr) {
-        let errorMessage = "An error occurred while creating the reservation.";
+        let errorMessage = "An error occurred while {% if reservation %}updating{% else %}creating{% endif %} the reservation.";
         if (xhr.responseJSON && xhr.responseJSON.message) {
           errorMessage = xhr.responseJSON.message;
         }
         Swal.fire({
-          title: "Error creating reservation",
+          title: "Error {% if reservation %}updating{% else %}creating{% endif %} reservation",
           text: errorMessage,
           icon: "error"
         });
@@ -649,4 +704,3 @@ $(document).ready(function () {
 </script>
 
 {% endblock javascripts %}
-

@@ -1,10 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+
+from activitylog.models import ActivityLog
+from activitylog.views import get_mac_address
 from .models import Guest
 from django.core.cache import cache
 from django.db.models import Q
 from datetime import datetime, timedelta
+
 
 @login_required(login_url="/authentication/login/")
 def guests_list_view(request):
@@ -42,8 +46,22 @@ def guests_list_view(request):
         "end_date": end_date,
         "search_term": search_term
     }
-    return render(request, "guests.html", context=context)
 
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed guests list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
+    return render(request, "guests.html", context=context)
 
 @login_required(login_url="/authentication/login/")
 def guests_add_view(request):
@@ -69,12 +87,27 @@ def guests_add_view(request):
             new_guest = Guest.objects.create(**attributes)
             new_guest.save()
             messages.success(request, f'Guest: {attributes["first_name"]} {attributes["last_name"]} created successfully!', extra_tags="success")
+
+            # Log activity
+            action = f"Added guest: {attributes['first_name']} {attributes['last_name']}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
             return redirect('guests:guests_list')
         except Exception as e:
             messages.error(request, 'There was an error during the creation!', extra_tags="danger")
             return redirect('guests:guests_add')
 
     return render(request, "guests_add.html", context=context)
+
 
 @login_required(login_url="/authentication/login/")
 def guests_update_view(request, guest_id):
@@ -109,6 +142,20 @@ def guests_update_view(request, guest_id):
                 setattr(guest, key, value)
             guest.save()
             messages.success(request, f'Guest: {guest.get_full_name()} updated successfully!', extra_tags="success")
+
+            # Log activity
+            action = f"Updated guest: {guest.get_full_name()}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
             return redirect('guests:guests_list')
         except Exception as e:
             messages.error(request, 'There was an error during the update!', extra_tags="danger")
@@ -123,6 +170,20 @@ def guests_delete_view(request, guest_id):
         guest = Guest.objects.get(id=guest_id)
         guest.delete()
         messages.success(request, f'Guest: {guest.get_full_name()} deleted!', extra_tags="success")
+
+        # Log activity
+        action = f"Deleted guest: {guest.get_full_name()}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
         return redirect('guests:guests_list')
     except Exception as e:
         messages.error(request, 'There was an error during the deletion!', extra_tags="danger")

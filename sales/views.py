@@ -2,6 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
+from activitylog.models import ActivityLog
+from activitylog.views import get_mac_address
 from sales.forms import SalesForm
 from sales.models import Sales, SalesItems
 from .models import Product
@@ -16,12 +18,12 @@ from datetime import datetime, timedelta
 def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def sales_list_view(request):
     today = datetime.now().date()
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    
+
     # Filter sales based on user role
     if request.user.groups.filter(name__in=['admin', 'manager']).exists():
         base_queryset = Sales.objects.all()
@@ -53,13 +55,28 @@ def sales_list_view(request):
         'sale_data': sale_data,
         'is_admin_or_manager': request.user.groups.filter(name__in=['admin', 'manager']).exists()
     }
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed sales list"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, "sales_list.html", context)
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def create_update_sales_view(request, sale_id=None):
     """Combined view for creating and updating sales"""
     sale = None if sale_id is None else get_object_or_404(Sales, id=sale_id)
-    
+
     # Check if user has permission to edit this sale
     if sale and not request.user.groups.filter(name__in=['admin', 'manager']).exists():
         if sale.user != request.user:
@@ -110,7 +127,7 @@ def create_update_sales_view(request, sale_id=None):
                         item.product.quantity += item.qty
                         item.product.save()
                     sale.salesitems_set.all().delete()
-                    
+
                     # Update sale
                     sale.sub_total = sub_total
                     sale.grand_total = grand_total
@@ -152,11 +169,24 @@ def create_update_sales_view(request, sale_id=None):
                     product.quantity -= qty
                     product.save()
 
-            return JsonResponse({
-                "status": "success",
-                "sale_id": sale.id,
-                "message": f"Sale {'updated' if sale_id else 'created'} successfully"
-            })
+                # Log activity
+                action = f"{'Updated' if sale_id else 'Created'} sale: {sale.id}"
+                details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+                ip_address = request.META.get('REMOTE_ADDR')
+                mac_address = get_mac_address()
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=action,
+                    details=details,
+                    ip_address=ip_address,
+                    mac_address=mac_address
+                )
+
+                return JsonResponse({
+                    "status": "success",
+                    "sale_id": sale.id,
+                    "message": f"Sale {'updated' if sale_id else 'created'} successfully"
+                })
 
         except ValueError as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
@@ -165,17 +195,46 @@ def create_update_sales_view(request, sale_id=None):
 
     return render(request, "create_update_sales.html", context=context)
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def delete_sales_view(request, sale_id):
     sale = get_object_or_404(Sales, id=sale_id)
     sale.delete()
     messages.success(request, 'Sale deleted successfully!', extra_tags="success")
+
+    # Log activity
+    action = f"Deleted sale: {sale.id}"
+    details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+    ip_address = request.META.get('REMOTE_ADDR')
+    mac_address = get_mac_address()
+    ActivityLog.objects.create(
+        user=request.user,
+        action=action,
+        details=details,
+        ip_address=ip_address,
+        mac_address=mac_address
+    )
+
     return redirect('sales_list')
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def sales_details_view(request, sale_id):
     sale = get_object_or_404(Sales, id=sale_id)
     sales_items = SalesItems.objects.filter(sale=sale)
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed sales details: {sale.id}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, "sales_details.html", {'sale': sale, 'sales_items': sales_items})
 
 @login_required(login_url="/authentication/login/")
@@ -186,6 +245,21 @@ def checkout_modal(request):
     context = {
         'grand_total': grand_total,
     }
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed checkout modal"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, 'checkout.html', context)
 
 
@@ -224,12 +298,26 @@ def process_payment(request):
                 "message": f"Payment processing error: {str(e)}"
             }, status=500)
 
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Processed payment"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return JsonResponse({
         "status": "error",
         "message": "Invalid request method"
     }, status=405)
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def revert_sales_view(request, sale_id):
     sale = get_object_or_404(Sales, id=sale_id)
 
@@ -245,12 +333,41 @@ def revert_sales_view(request, sale_id):
             sale.delete()
 
             messages.success(request, 'Sale reverted successfully!', extra_tags="success")
+
+            # Log activity
+            action = f"Reverted sale: {sale.id}"
+            details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+            ip_address = request.META.get('REMOTE_ADDR')
+            mac_address = get_mac_address()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=action,
+                details=details,
+                ip_address=ip_address,
+                mac_address=mac_address
+            )
+
     except Exception as e:
         messages.error(request, f'Error reverting sale: {str(e)}', extra_tags="danger")
 
     return redirect('sales:sales_list')
 
-@login_required(login_url="authentication/login/")
+@login_required(login_url="/authentication/login/")
 def receipt_view(request, sale_id):
     sale = get_object_or_404(Sales, id=sale_id)
+
+    # Log activity
+    if request.user.is_authenticated:
+        action = f"Viewed receipt for sale: {sale.id}"
+        details = f"User: {request.user.username}, IP: {request.META.get('REMOTE_ADDR')}, User-Agent: {request.META.get('HTTP_USER_AGENT')}"
+        ip_address = request.META.get('REMOTE_ADDR')
+        mac_address = get_mac_address()
+        ActivityLog.objects.create(
+            user=request.user,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            mac_address=mac_address
+        )
+
     return render(request, "receipt.html", {'sale': sale})
