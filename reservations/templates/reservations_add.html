@@ -274,6 +274,18 @@ rel="stylesheet"
                       />
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label>Amount Change</label>
+                    <div class="input-group">
+                      <input
+                        name="amount_change"
+                        class="form-control"
+                        required
+                        {% if reservation %}value="{{ reservation.amount_change }}"{% endif %}
+                        readonly
+                      />
+                    </div>
+                  </div>
                   <button
                     type="submit"
                     class="btn btn-success font-weight-bold"
@@ -284,6 +296,7 @@ rel="stylesheet"
                       Create Reservation
                     {% endif %}
                   </button>
+                  <button type="button" class="btn btn-primary" id="printButton">Print</button>
                 </div>
               </div>
             </div>
@@ -312,11 +325,11 @@ rel="stylesheet"
 // Reservation Management Application
 
 // Round number to specified decimal places
+// Round number to specified decimal places
 function roundTo(n, digits) {
   if (digits === undefined) {
     digits = 0;
   }
-
   var multiplicator = Math.pow(10, digits);
   n = parseFloat((n * multiplicator).toFixed(11));
   return Math.round(n) / multiplicator;
@@ -341,7 +354,7 @@ var reservation = {
     grand_total: 0.0,
     tax_amount: 0.0,
     tax_percentage: 0.0,
-    amount_paid: 0.0,
+    amount_payed: 0.0,
     amount_change: 0.0,
     check_in: "",
     check_out: "",
@@ -357,12 +370,21 @@ var reservation = {
       dict.total_room = roundTo(dict.days * dict.price, 2);
       sub_total += dict.total_room;
     });
+    
     this.items.sub_total = roundTo(sub_total, 2);
     this.items.tax_amount = roundTo(this.items.sub_total * (tax_percentage / 100), 2);
     this.items.grand_total = roundTo(this.items.sub_total + this.items.tax_amount, 2);
+    
+    // Calculate change based on current amount paid
+    var amountPaid = parseFloat($('input[name="amount_payed"]').val()) || 0;
+    this.items.amount_payed = amountPaid;
+    this.items.amount_change = roundTo(amountPaid - this.items.grand_total, 2);
+    
+    // Update all form fields
     $('input[name="sub_total"]').val(this.items.sub_total);
     $('input[name="tax_amount"]').val(this.items.tax_amount);
     $('input[name="grand_total"]').val(this.items.grand_total);
+    $('input[name="amount_change"]').val(this.items.amount_change);
   },
   add_room: function (item) {
     var check_in = $('#check_in').val();
@@ -434,13 +456,23 @@ $(document).ready(function () {
     reservation.calculate_reservation();
   });
 
+  // Initialize amount paid input with change calculation
+  $('input[name="amount_payed"]').on('change keyup', function() {
+    var amountPaid = parseFloat($(this).val()) || 0;
+    var grandTotal = parseFloat($('input[name="grand_total"]').val()) || 0;
+    var change = roundTo(amountPaid - grandTotal, 2);
+    $('input[name="amount_change"]').val(change);
+    reservation.items.amount_payed = amountPaid;
+    reservation.items.amount_change = change;
+  });
+
   // Initialize guest select box
   $("#searchbox_guests").select2({
     placeholder: "Select a guest",
     allowClear: true
   });
 
-  // Initialize room search box
+  // Initialize room search box with improved validation
   $("#searchbox_rooms").select2({
     delay: 250,
     placeholder: "Search a room",
@@ -451,11 +483,24 @@ $(document).ready(function () {
       url: "{% url 'rooms:get_rooms' %}",
       type: "POST",
       data: function (params) {
+        var check_in = $('#check_in').val();
+        var check_out = $('#check_out').val();
+        
+        // Validate dates before searching
+        if (!check_in || !check_out) {
+          Swal.fire({
+            title: "Please select dates",
+            text: "Check-in and check-out dates are required",
+            icon: "warning"
+          });
+          return false;
+        }
+        
         return {
           term: params.term,
           csrfmiddlewaretoken: $("[name=csrfmiddlewaretoken]").val(),
-          check_in: $("#check_in").val(),
-          check_out: $("#check_out").val()
+          check_in: check_in,
+          check_out: check_out
         };
       },
       processResults: function (data) {
@@ -511,25 +556,25 @@ $(document).ready(function () {
     }
   });
 
-  // Set current date for check-in and check-out
+  // Improved date handling
   var today = new Date();
   var year = today.getFullYear();
   var month = String(today.getMonth() + 1).padStart(2, '0');
   var day = String(today.getDate()).padStart(2, '0');
   var currentDate = year + '-' + month + '-' + day;
 
-  // Set the default date to today for check-in and check-out fields
   $('#check_in').val(currentDate);
   $('#check_out').val(currentDate);
 
-  // Handle date change
+  // Improved date change handler
   $('#check_in, #check_out').on('change', function() {
     var check_in = new Date($('#check_in').val() + 'T00:00:00');
     var check_out = new Date($('#check_out').val() + 'T00:00:00');
     var currentDate = new Date();
     currentDate.setHours(0,0,0,0);
 
-    if (check_in.getTime() < currentDate.getTime() - 86400000) {
+    // Check if check-in is before current date
+    if (check_in.getTime() < currentDate.getTime()) {
       Swal.fire({
         title: "Invalid Date",
         text: "Check-in date cannot be earlier than the current date",
@@ -539,6 +584,7 @@ $(document).ready(function () {
       return;
     }
 
+    // Check if check-out is before check-in
     if (check_out.getTime() < check_in.getTime()) {
       Swal.fire({
         title: "Invalid Date",
@@ -549,9 +595,10 @@ $(document).ready(function () {
       return;
     }
 
+    // Calculate days between dates
     var days = calculateDaysBetweenDates($('#check_in').val(), $('#check_out').val());
-
-    // Update the days for all rooms without removing them
+    
+    // Update the days for all rooms
     $.each(reservation.items.rooms, function(index, room) {
       room.days = days;
       room.total_room = roundTo(days * room.price, 2);
@@ -568,12 +615,11 @@ $(document).ready(function () {
   reservation.items.grand_total = {{ reservation.grand_total }};
   reservation.items.tax_amount = {{ reservation.tax_amount }};
   reservation.items.tax_percentage = {{ reservation.tax_percentage }};
-  reservation.items.amount_paid = {{ reservation.amount_paid }};
+  reservation.items.amount_payed = {{ reservation.amount_payed }};
   reservation.items.amount_change = {{ reservation.amount_change }};
   reservation.items.check_in = "{{ reservation.check_in|date:'Y-m-d' }}";
   reservation.items.check_out = "{{ reservation.check_out|date:'Y-m-d' }}";
 
-  // Initialize rooms
   {% for detail in reservation_details %}
   reservation.items.rooms.push({
     id: {{ detail.room.id }},
@@ -585,11 +631,10 @@ $(document).ready(function () {
   });
   {% endfor %}
 
-  // Update the rooms table
   reservation.list_room();
   {% endif %}
 
-  // Form submission
+  // Form submission with improved validation
   $("form.reservationForm").on("submit", function (e) {
     e.preventDefault();
 
@@ -616,12 +661,13 @@ $(document).ready(function () {
       return false;
     }
 
-    var amountPaid = parseFloat($('[name="amount_paid"]').val()) || 0;
+    var amountPaid = parseFloat($('[name="amount_payed"]').val()) || 0;
     var grandTotal = parseFloat($('[name="grand_total"]').val()) || 0;
 
     if (amountPaid < grandTotal) {
       Swal.fire({
-        title: "Payable Amount is lower than the Grand Total",
+        title: "Insufficient Payment",
+        text: "Amount paid must be equal to or greater than the grand total",
         icon: "warning"
       });
       return false;
@@ -633,7 +679,7 @@ $(document).ready(function () {
       grand_total: $('input[name="grand_total"]').val(),
       tax_amount: $('input[name="tax_amount"]').val(),
       tax_percentage: $('input[name="tax_percentage"]').val(),
-      amount_paid: $('input[name="amount_paid"]').val(),
+      amount_payed: $('input[name="amount_payed"]').val(),
       amount_change: roundTo(amountPaid - grandTotal, 2),
       reservation_date: new Date().toISOString().split('T')[0],
       check_in: $('input[name="check_in"]').val(),
@@ -677,6 +723,14 @@ $(document).ready(function () {
         });
       }
     });
+  });
+
+  // Handle print button click
+  $('#printButton').on('click', function () {
+    window.print();
+    setTimeout(function () {
+      window.location.href = "{% url 'reservations:reservations_add' %}";
+    }, 1000); // Wait for 1 second before redirecting
   });
 
   function template_room_searchbox(repo) {

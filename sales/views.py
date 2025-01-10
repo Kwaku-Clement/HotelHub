@@ -74,7 +74,6 @@ def sales_list_view(request):
 
 @login_required(login_url="/authentication/login/")
 def create_update_sales_view(request, sale_id=None):
-    """Combined view for creating and updating sales"""
     sale = None if sale_id is None else get_object_or_404(Sales, id=sale_id)
 
     # Check if user has permission to edit this sale
@@ -261,7 +260,6 @@ def checkout_modal(request):
         )
 
     return render(request, 'checkout.html', context)
-
 
 @csrf_exempt
 def process_payment(request):

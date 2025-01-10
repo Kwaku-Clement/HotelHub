@@ -111,17 +111,24 @@ def reservations_add_create_view(request, reservation_id=None):
 
                 # Check room availability
                 requested_room_ids = [int(room["id"]) for room in data["rooms"]]
-                existing_reservations = Reservation.objects.filter(
-                    Q(check_in__lt=check_out) &
-                    Q(check_out__gt=check_in),
+                conflicting_reservations = Reservation.objects.filter(
+                    ~Q(status='Canceled'),  # Exclude canceled reservations
+                    Q(check_in__lt=check_out) & Q(check_out__gt=check_in),
                     reservationdetail__room_id__in=requested_room_ids
-                ).exclude(id=reservation_id).distinct()
+                ).exclude(id=reservation_id)
 
-                if existing_reservations.exists():
+                if conflicting_reservations.exists():
+                    # Get the conflicting room details
+                    conflicting_rooms = Room.objects.filter(
+                        reservationdetail__reservation__in=conflicting_reservations
+                    ).distinct()
+                    
+                    room_names = ", ".join([room.name for room in conflicting_rooms])
                     return JsonResponse({
                         "status": "error",
-                        "message": "The selected room is not available for the selected dates."
+                        "message": f"The following rooms are not available for the selected dates: {room_names}"
                     }, status=400)
+
 
                 # Create or update reservation
                 if reservation_id:
@@ -131,7 +138,7 @@ def reservations_add_create_view(request, reservation_id=None):
                     reservation.grand_total = float(data["grand_total"])
                     reservation.tax_amount = float(data["tax_amount"])
                     reservation.tax_percentage = float(data["tax_percentage"])
-                    reservation.amount_paid = float(data["amount_paid"])
+                    reservation.amount_payed = float(data["amount_payed"])
                     reservation.amount_change = float(data["amount_change"])
                     reservation.check_in = check_in
                     reservation.check_out = check_out
@@ -146,7 +153,7 @@ def reservations_add_create_view(request, reservation_id=None):
                         grand_total=float(data["grand_total"]),
                         tax_amount=float(data["tax_amount"]),
                         tax_percentage=float(data["tax_percentage"]),
-                        amount_paid=float(data["amount_paid"]),
+                        amount_payed=float(data["amount_payed"]),
                         amount_change=float(data["amount_change"]),
                         reservation_date=data["reservation_date"],
                         check_in=check_in,

@@ -227,10 +227,14 @@ def generate_reservation_report(
         service = ReservationReportService(start_datetime, end_datetime)
         report_data = service.generate_report()
 
+        # Ensure all expected keys are present
+        if 'total_reservation_revenue' not in report_data:
+            raise KeyError("'total_reservation_revenue' key is missing in report data")
+
         # Calculate financial metrics
         total_reservation_revenue = Decimal(report_data['total_reservation_revenue'])
-        total_miscellaneous = Decimal(report_data['total_miscellaneous'])
-        net_reservation_revenue = Decimal(report_data['net_reservation_revenue'])
+        total_miscellaneous = Decimal(report_data.get('total_miscellaneous', 0))
+        net_reservation_revenue = Decimal(report_data.get('net_reservation_revenue', 0))
 
         # Calculate average revenue per reservation
         total_reservations = report_data['reservations'].count()
@@ -259,8 +263,8 @@ def generate_reservation_report(
                 net_reservation_revenue,
                 report_data
             ),
-            'top_reservations': report_data['top_reservations'],
-            'top_guests': report_data['top_guests'],
+            'top_reservations': report_data.get('top_reservations', []),
+            'top_guests': report_data.get('top_guests', []),
             'average_revenue_per_reservation': average_revenue_per_reservation
         }
         logger.info("Report data successfully generated.")
@@ -277,7 +281,6 @@ def generate_reservation_report(
         logger.error(f"Unexpected error: {e}")
 
         return redirect('reports:select_report')
-
 
 @login_required
 def generate_store_report(

@@ -5,10 +5,21 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 
+from django import forms
+from .models import Category
+
+from django import forms
+from .models import Category
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ['name', 'description', 'status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].empty_label = "Select value"
+
 
 class ProductForm(forms.ModelForm):
     class Meta:

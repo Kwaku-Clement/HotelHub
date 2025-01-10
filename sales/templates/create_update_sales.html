@@ -167,330 +167,363 @@
 <script src="{% static 'assets/sweetalert2/sweetalert2@11.js' %}"></script>
 
 <script>
-$(document).ready(function() {
-    // Constants and Initialization
-    const isUpdate = {% if sale %}true{% else %}false{% endif %};
-    let salesItems = [];
-
-    // Initialize Select2
-    $(".select2").select2({
-        theme: "bootstrap4",
-        width: "100%",
-        placeholder: "Select a product"
-    });
-
-    // Load existing items if updating
-    {% if sale and existing_items %}
-        const existingItems = {{ existing_items|safe }};
-        existingItems.forEach(item => {
-            addItemToTable(
-                item.product_id,
-                item.product_name,
-                parseFloat(item.price),
-                parseInt(item.qty)
-            );
-        });
-        calculateTotals();
-    {% endif %}
-
-    // Utility Functions
-    function formatCurrency(number) {
-        return parseFloat(number).toFixed(2);
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === name + "=") {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Calculation Functions
-    function calculateTotals() {
-        let subTotal = 0;
-        let totalItems = 0;
-
-        $("tbody tr").each(function() {
-            subTotal += parseFloat($(this).find(".product-total").text());
-            totalItems += parseInt($(this).find(".product-qty").text());
-        });
-
-        const taxPercent = parseFloat($('input[name="tax"]').val()) || 0;
-        const taxAmount = subTotal * (taxPercent / 100);
-        const grandTotal = subTotal + taxAmount;
-
-        $("#sub_total").text(formatCurrency(subTotal));
-        $("#tax_amount").text(formatCurrency(taxAmount));
-        $("#grand_total").text(formatCurrency(grandTotal));
-        $("#total_items").text(totalItems);
-
-        updateChange();
-    }
-
-    function updateChange() {
-        const grandTotal = parseFloat($("#grand_total").text());
-        const amountPaid = parseFloat($("#amount_paid").val()) || 0;
-        const change = amountPaid - grandTotal;
-
-        $("#amount_change").text(formatCurrency(Math.max(0, change)));
-    }
-
-    // Validation Functions
-    function validateProduct(productId, quantity) {
-        if (!productId) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Product Required',
-                text: 'Please select a product.'
-            });
-            return false;
-        }
-
-        if (quantity <= 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Invalid Quantity',
-                text: 'Quantity must be greater than 0.'
-            });
-            return false;
-        }
-
-        let exists = false;
-        $("tbody tr").each(function() {
-            if ($(this).data("product-id") == productId) {
-                exists = true;
-                return false;
-            }
-        });
-
-        if (exists) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Product Already Added',
-                text: 'This product is already in the cart. Please remove it first if you want to change the quantity.'
-            });
-            return false;
-        }
-
-        return true;
-    }
-
-    function validateCheckout() {
-        const items = $("tbody tr");
-        if (items.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'No Items',
-                text: 'Please add at least one item to the cart.'
-            });
-            return false;
-        }
-
-        const grandTotal = parseFloat($("#grand_total").text());
-        const amountPaid = parseFloat($("#amount_paid").val()) || 0;
-
-        if (amountPaid < grandTotal) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Insufficient Payment',
-                text: 'Amount paid must be equal to or greater than the grand total.'
-            });
-            $("#amount_paid").focus();
-            return false;
-        }
-
-        return true;
-    }
-
-    // Cart Management Functions
-    function addItemToTable(productId, productName, price, quantity) {
-        const total = quantity * price;
-        const newRow = `
-            <tr data-product-id="${productId}">
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger remove-item">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-                <td class="product-qty">${quantity}</td>
-                <td>${productName}</td>
-                <td class="product-price">${formatCurrency(price)}</td>
-                <td class="product-total">${formatCurrency(total)}</td>
-            </tr>
-        `;
-
-        $("tbody").append(newRow);
-        calculateTotals();
-    }
-
-    function collectSaleData() {
-        const salesItems = [];
-        $("tbody tr").each(function() {
-            const row = $(this);
-            salesItems.push({
-                product_id: row.data("product-id"),
-                qty: parseInt(row.find(".product-qty").text()),
-                price: parseFloat(row.find(".product-price").text()),
-                total: parseFloat(row.find(".product-total").text())
-            });
-        });
-
-        return {
-            sub_total: parseFloat($("#sub_total").text()),
-            tax: parseFloat($('input[name="tax"]').val()) || 0,
-            tax_amount: parseFloat($("#tax_amount").text()),
-            grand_total: parseFloat($("#grand_total").text()),
-            amount_payed: parseFloat($("#amount_paid").val()) || 0,
-            amount_change: parseFloat($("#amount_change").text()),
-            items: salesItems
-        };
-    }
-
-    // Event Handlers
-    $("#add_item").click(function() {
-        const productSelect = $("#product-id");
-        const product = productSelect.find(":selected");
-        const productId = product.val();
-        const quantity = parseInt($("#product-qty").val());
-        const price = parseFloat(product.data("price"));
-
-        if (!validateProduct(productId, quantity)) {
-            return;
-        }
-
-        addItemToTable(productId, product.text(), price, quantity);
-
-        // Reset form
-        productSelect.val("").trigger("change");
-        $("#product-qty").val(1);
-    });
-
-    $(document).on("click", ".remove-item", function() {
-        $(this).closest("tr").remove();
-        calculateTotals();
-    });
-
-    $('input[name="tax"]').on("input", function() {
-        let value = parseFloat($(this).val());
-        if (value < 0) value = 0;
-        if (value > 100) value = 100;
-        $(this).val(value);
-        calculateTotals();
-    });
-
-    $("#amount_paid").on("input", function() {
-        const value = parseFloat($(this).val());
-        if (value < 0) $(this).val(0);
-        updateChange();
-    });
-
-    $("#check_out").click(function() {
-        if (!validateCheckout()) {
-            return;
-        }
-
-        const saleData = collectSaleData();
-        const checkoutBtn = $(this);
-        
-        // Disable checkout button
-        checkoutBtn.prop("disabled", true);
-        checkoutBtn.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
-
-        const url = isUpdate 
-            ? `{% url 'sales:manage_sales' sale_id=sale.id %}`
-            : "{% url 'sales:manage_sales' %}";
-
-        $.ajax({
-            url: url,
-            method: "POST",
-            contentType: "application/json",
-            headers: {
-                "X-CSRFToken": getCookie("csrftoken")
-            },
-            data: JSON.stringify(saleData),
-            success: function(response) {
-                if (response.status === "success") {
-                    Swal.fire({
-                        icon: "success",
-                        title: `Sale ${isUpdate ? 'Updated' : 'Complete'}`,
-                        text: response.message,
-                        showCancelButton: true,
-                        confirmButtonText: "Print Receipt",
-                        cancelButtonText: `${isUpdate ? 'Back to List' : 'New Sale'}`
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            const receiptUrl = `{% url 'sales:receipt' sale_id=0 %}`.replace('0', response.sale_id);
-                            const newTab = window.open(receiptUrl, '_blank');
-                            newTab.onload = function() {
-                                newTab.print();
-                            };
-                        } else {
-                            window.location.href = "{% url 'sales:sales_list' %}";
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: response.message || "An error occurred while processing the sale."
-                    });
-                }
-            },
-            error: function(xhr) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: xhr.responseJSON?.message || "An error occurred while processing the sale."
-                });
-            },
-            complete: function() {
-                checkoutBtn.prop("disabled", false);
-                checkoutBtn.html(isUpdate ? "Update Sale" : "Process Payment");
-            }
-        });
-    });
-
-    // Keyboard Shortcuts
-    $(document).keydown(function(e) {
-        // Alt + N: Focus product select
-        if (e.altKey && e.keyCode === 78) {
-            e.preventDefault();
-            $("#product-id").select2("open");
-        }
-        // Alt + P: Focus payment amount
-        else if (e.altKey && e.keyCode === 80) {
-            e.preventDefault();
-            $("#amount_paid").focus();
-        }
-        // Alt + C: Trigger checkout
-        else if (e.altKey && e.keyCode === 67) {
-            e.preventDefault();
-            $("#check_out").click();
-        }
-    });
-
-    // Product Selection Handlers
-    $("#product-id").on("select2:select", function(e) {
-        $("#product-qty").focus();
-    });
-
-    $("#product-qty").keypress(function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            $("#add_item").click();
-        }
-    });
-
-    // Initialize tooltips
-    $('[data-toggle="tooltip"]').tooltip();
-});
-</script>
+  // Define URLs at the top level of the script
+  const isUpdate = {% if sale %}true{% else %}false{% endif %};
+  let updateUrl = '';
+  let createUrl = '';
+  
+  $(document).ready(function() {
+      // Set up URLs
+      {% if sale %}
+          updateUrl = "{% url 'sales:update_sales' sale_id=sale.id %}";
+      {% endif %}
+      createUrl = "{% url 'sales:create_sales' %}";
+  
+      // Constants and Initialization
+      let salesItems = [];
+  
+      // Initialize Select2
+      $(".select2").select2({
+          theme: "bootstrap4",
+          width: "100%",
+          placeholder: "Select a product"
+      });
+  
+      // Load existing items if updating
+      {% if sale and existing_items %}
+          const existingItems = {{ existing_items|safe }};
+          existingItems.forEach(item => {
+              addItemToTable(
+                  item.product_id,
+                  item.product_name,
+                  parseFloat(item.price),
+                  parseInt(item.qty)
+              );
+          });
+          calculateTotals();
+      {% endif %}
+  
+      // Utility Functions
+      function formatCurrency(number) {
+          return parseFloat(number).toFixed(2);
+      }
+  
+      function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+              const cookies = document.cookie.split(";");
+              for (let i = 0; i < cookies.length; i++) {
+                  const cookie = cookies[i].trim();
+                  if (cookie.substring(0, name.length + 1) === name + "=") {
+                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                      break;
+                  }
+              }
+          }
+          return cookieValue;
+      }
+  
+      // Calculation Functions
+      function calculateTotals() {
+          let subTotal = 0;
+          let totalItems = 0;
+  
+          $("tbody tr").each(function() {
+              subTotal += parseFloat($(this).find(".product-total").text());
+              totalItems += parseInt($(this).find(".product-qty").text());
+          });
+  
+          const taxPercent = parseFloat($('input[name="tax"]').val()) || 0;
+          const taxAmount = subTotal * (taxPercent / 100);
+          const grandTotal = subTotal + taxAmount;
+  
+          $("#sub_total").text(formatCurrency(subTotal));
+          $("#tax_amount").text(formatCurrency(taxAmount));
+          $("#grand_total").text(formatCurrency(grandTotal));
+          $("#total_items").text(totalItems);
+  
+          updateChange();
+      }
+  
+      function updateChange() {
+          const grandTotal = parseFloat($("#grand_total").text());
+          const amountPaid = parseFloat($("#amount_paid").val()) || 0;
+          const change = amountPaid - grandTotal;
+  
+          $("#amount_change").text(formatCurrency(Math.max(0, change)));
+      }
+  
+      // Validation Functions
+      function validateProduct(productId, quantity) {
+          if (!productId) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Product Required',
+                  text: 'Please select a product.'
+              });
+              return false;
+          }
+  
+          if (quantity <= 0) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Invalid Quantity',
+                  text: 'Quantity must be greater than 0.'
+              });
+              return false;
+          }
+  
+          let exists = false;
+          $("tbody tr").each(function() {
+              if ($(this).data("product-id") == productId) {
+                  exists = true;
+                  return false;
+              }
+          });
+  
+          if (exists) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Product Already Added',
+                  text: 'This product is already in the cart. Please remove it first if you want to change the quantity.'
+              });
+              return false;
+          }
+  
+          return true;
+      }
+  
+      function validateCheckout() {
+          const items = $("tbody tr");
+          if (items.length === 0) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'No Items',
+                  text: 'Please add at least one item to the cart.'
+              });
+              return false;
+          }
+  
+          const grandTotal = parseFloat($("#grand_total").text());
+          const amountPaid = parseFloat($("#amount_paid").val()) || 0;
+  
+          if (isNaN(amountPaid) || amountPaid <= 0) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Invalid Payment',
+                  text: 'Please enter a valid payment amount.'
+              });
+              $("#amount_paid").focus();
+              return false;
+          }
+  
+          if (amountPaid < grandTotal) {
+              Swal.fire({
+                  icon: 'warning',
+                  title: 'Insufficient Payment',
+                  text: 'Amount paid must be equal to or greater than the grand total.'
+              });
+              $("#amount_paid").focus();
+              return false;
+          }
+  
+          return true;
+      }
+  
+      // Cart Management Functions
+      function addItemToTable(productId, productName, price, quantity) {
+          const total = quantity * price;
+          const newRow = `
+              <tr data-product-id="${productId}">
+                  <td>
+                      <button type="button" class="btn btn-sm btn-danger remove-item">
+                          <i class="fas fa-times"></i>
+                      </button>
+                  </td>
+                  <td class="product-qty">${quantity}</td>
+                  <td>${productName}</td>
+                  <td class="product-price">${formatCurrency(price)}</td>
+                  <td class="product-total">${formatCurrency(total)}</td>
+              </tr>
+          `;
+  
+          $("tbody").append(newRow);
+          calculateTotals();
+      }
+  
+      function collectSaleData() {
+          const salesItems = [];
+          $("tbody tr").each(function() {
+              const row = $(this);
+              salesItems.push({
+                  product_id: row.data("product-id"),
+                  qty: parseInt(row.find(".product-qty").text()),
+                  price: parseFloat(row.find(".product-price").text()),
+                  total: parseFloat(row.find(".product-total").text())
+              });
+          });
+  
+          return {
+              sub_total: parseFloat($("#sub_total").text()),
+              tax: parseFloat($('input[name="tax"]').val()) || 0,
+              tax_amount: parseFloat($("#tax_amount").text()),
+              grand_total: parseFloat($("#grand_total").text()),
+              amount_payed: parseFloat($("#amount_paid").val()) || 0,
+              amount_change: parseFloat($("#amount_change").text()),
+              items: salesItems
+          };
+      }
+  
+      // Event Handlers
+      $("#add_item").click(function() {
+          const productSelect = $("#product-id");
+          const product = productSelect.find(":selected");
+          const productId = product.val();
+          const quantity = parseInt($("#product-qty").val());
+          const price = parseFloat(product.data("price"));
+  
+          if (!validateProduct(productId, quantity)) {
+              return;
+          }
+  
+          addItemToTable(productId, product.text(), price, quantity);
+  
+          // Reset form
+          productSelect.val("").trigger("change");
+          $("#product-qty").val(1);
+      });
+  
+      $(document).on("click", ".remove-item", function() {
+          $(this).closest("tr").remove();
+          calculateTotals();
+      });
+  
+      $('input[name="tax"]').on("input", function() {
+          let value = parseFloat($(this).val());
+          if (value < 0) value = 0;
+          if (value > 100) value = 100;
+          $(this).val(value);
+          calculateTotals();
+      });
+  
+      $("#amount_paid").on("input", function() {
+          const value = parseFloat($(this).val());
+          if (value < 0) $(this).val(0);
+          updateChange();
+      });
+  
+      $("#check_out").click(function() {
+          if (!validateCheckout()) {
+              return;
+          }
+  
+          const saleData = collectSaleData();
+          const checkoutBtn = $(this);
+  
+          // Disable checkout button
+          checkoutBtn.prop("disabled", true);
+          checkoutBtn.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+  
+          // Use the appropriate URL based on whether we're updating or creating
+          const url = isUpdate ? updateUrl : createUrl;
+  
+          console.log('Using URL:', url); // Debug log
+          console.log('Sale Data:', saleData); // Debug log
+  
+          $.ajax({
+              url: url,
+              method: "POST",
+              contentType: "application/json",
+              headers: {
+                  "X-CSRFToken": getCookie("csrftoken")
+              },
+              data: JSON.stringify(saleData),
+              success: function(response) {
+                  console.log('Success Response:', response);
+                  if (response.status === "success") {
+                      Swal.fire({
+                          icon: "success",
+                          title: `Sale ${isUpdate ? 'Updated' : 'Complete'}`,
+                          text: response.message,
+                          showCancelButton: true,
+                          confirmButtonText: "Print Receipt",
+                          cancelButtonText: `${isUpdate ? 'Back to List' : 'New Sale'}`
+                      }).then((result) => {
+                          if (result.isConfirmed) {
+                              const receiptUrl = `{% url 'sales:receipt' sale_id=0 %}`.replace('0', response.sale_id);
+                              const newTab = window.open(receiptUrl, '_blank');
+                              if (newTab) {
+                                  newTab.onload = function() {
+                                      newTab.print();
+                                  };
+                              }
+                          } else {
+                              window.location.href = "{% url 'sales:create_sales' %}";
+                          }
+                      });
+                  } else {
+                      Swal.fire({
+                          icon: "error",
+                          title: "Error",
+                          text: response.message || "An error occurred while processing the sale."
+                      });
+                  }
+              },
+              error: function(xhr, status, error) {
+                  console.error('Error details:', {
+                      status: status,
+                      error: error,
+                      response: xhr.responseText
+                  });
+  
+                  Swal.fire({
+                      icon: "error",
+                      title: "Error",
+                      text: xhr.responseJSON?.message || "An error occurred while processing the sale."
+                  });
+              },
+              complete: function() {
+                  checkoutBtn.prop("disabled", false);
+                  checkoutBtn.html(isUpdate ? "Update Sale" : "Process Payment");
+                  console.log('Request completed');
+              }
+          });
+      });
+  
+      // Keyboard Shortcuts
+      $(document).keydown(function(e) {
+          // Alt + N: Focus product select
+          if (e.altKey && e.keyCode === 78) {
+              e.preventDefault();
+              $("#product-id").select2("open");
+          }
+          // Alt + P: Focus payment amount
+          else if (e.altKey && e.keyCode === 80) {
+              e.preventDefault();
+              $("#amount_paid").focus();
+          }
+          // Alt + C: Trigger checkout
+          else if (e.altKey && e.keyCode === 67) {
+              e.preventDefault();
+              $("#check_out").click();
+          }
+      });
+  
+      // Product Selection Handlers
+      $("#product-id").on("select2:select", function(e) {
+          $("#product-qty").focus();
+      });
+  
+      $("#product-qty").keypress(function(e) {
+          if (e.which === 13) {
+              e.preventDefault();
+              $("#add_item").click();
+          }
+      });
+  
+      // Initialize tooltips
+      $('[data-toggle="tooltip"]').tooltip();
+  });
+  </script>
+  
 {% endblock javascripts %}

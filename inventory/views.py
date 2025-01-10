@@ -150,6 +150,7 @@ def category_create_update(request, category_id=None):
             return redirect('inventory:category_list')
         else:
             handle_error(request, 'Invalid form submission!')
+            logger.error(f"Form errors: {form.errors}")
 
     else:
         form = CategoryForm(instance=category)
@@ -161,7 +162,6 @@ def category_create_update(request, category_id=None):
         "title": title
     }
     return render(request, "category_create_update.html", context=context)
-
 
 @login_required(login_url="/authentication/login/")
 def categories_delete_view(request, category_id):

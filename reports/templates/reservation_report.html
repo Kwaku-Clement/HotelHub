@@ -97,7 +97,7 @@
 
                 <div class="report-section">
                     <h2>Analysis</h2>
-                    <div class="report-data text-center mb-4">{{ explanation|linebreaksbr }}</div>
+                    <div class="report-data text mb-4">{{ explanation|linebreaksbr }}</div>
 
                     <h3>Top Reservations</h3>
                     <div class="table-responsive">
@@ -110,13 +110,19 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for reservation in top_reservations %}
-                                <tr>
-                                    <td>{{ reservation.guest_name }}</td>
-                                    <td>{{ reservation.reservation_date|date:"M d, Y" }}</td>
-                                    <td>${{ reservation.grand_total|floatformat:2 }}</td>
-                                </tr>
-                                {% endfor %}
+                                {% if top_reservations %}
+                                    {% for reservation in top_reservations %}
+                                    <tr>
+                                        <td>{{ reservation.guest_name }}</td>
+                                        <td>{{ reservation.reservation_date|date:"M d, Y" }}</td>
+                                        <td>${{ reservation.grand_total|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3">No top reservations available.</td>
+                                    </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -131,12 +137,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for guest in top_guests %}
-                                <tr>
-                                    <td>{{ guest.guest_name }}</td>
-                                    <td>${{ guest.total_reservations|floatformat:2 }}</td>
-                                </tr>
-                                {% endfor %}
+                                {% if top_guests %}
+                                    {% for guest in top_guests %}
+                                    <tr>
+                                        <td>{{ guest.guest_name }}</td>
+                                        <td>${{ guest.total_reservations|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="2">No top guests available.</td>
+                                    </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>

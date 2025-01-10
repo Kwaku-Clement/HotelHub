@@ -1,4 +1,5 @@
 from decimal import Decimal
+from venv import logger
 from django.db.models import Sum, QuerySet, Q
 from inventory.models import Category, InventoryMiscellaneous, Product, Purchase, Supplier
 from reservations.models import Reservation, Guest
@@ -6,7 +7,6 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 from sales.models import Sales, SalesItems
-
 
 class ReportService:
     @staticmethod
@@ -31,6 +31,25 @@ class ReportService:
         expenses = InventoryMiscellaneous.objects.filter(date__range=[start_date, end_date])
         total = expenses.aggregate(total=Sum('amount'))['total']
         return float(total) if total else 0.0
+    
+    @staticmethod
+    def get_reservations_in_period(start_date: datetime, end_date: datetime) -> QuerySet[Reservation]:
+        """Get all reservations within the specified period."""
+        return Reservation.objects.filter(reservation_date__range=[start_date, end_date])
+
+    @staticmethod
+    def calculate_total_amount(queryset: QuerySet, field_name: str) -> float:
+        """Calculate total amount from a queryset for a specific field."""
+        total = queryset.aggregate(total=Sum(field_name))['total']
+        return float(total) if total else 0.0
+
+    @staticmethod
+    def get_miscellaneous_expenses(start_date: datetime, end_date: datetime) -> float:
+        """Calculate total miscellaneous expenses within the period."""
+        expenses = InventoryMiscellaneous.objects.filter(date__range=[start_date, end_date])
+        total = expenses.aggregate(total=Sum('amount'))['total']
+        return float(total) if total else 0.0
+    
 
 class StoreReportService:
     def __init__(self, start_date: datetime, end_date: datetime):
@@ -124,12 +143,14 @@ class ReservationReportService:
                 {
                     'reservation_id': reservation.id,
                     'guest': reservation.guest,
+                    'reservation_date': reservation.reservation_date,
                     'guest_name': reservation.guest.get_full_name(),
                     'grand_total': float(reservation.grand_total)
                 }
                 for reservation in top_reservations
             ]
         except Exception as e:
+            logger.error(f"Error fetching top reservations: {e}")
             return []
 
     def get_top_guests(self) -> List[Dict[str, Any]]:
@@ -150,6 +171,7 @@ class ReservationReportService:
                 for guest in top_guests
             ]
         except Exception as e:
+            logger.error(f"Error fetching top guests: {e}")
             return []
 
     def generate_report(self) -> Dict[str, Any]:
@@ -168,5 +190,5 @@ class ReservationReportService:
                 'top_guests': self.get_top_guests()
             }
         except Exception as e:
+            logger.error(f"Error generating report: {e}")
             return {}
-
